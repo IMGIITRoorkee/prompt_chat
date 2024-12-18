@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
@@ -418,6 +419,38 @@ class ChatAPI {
           "Please change ownership before leaving your server, as you are the owner");
     }
     await reqServer.removeMember(callerName);
+  }
+
+  void searchServers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<Server>(
+      query: term,
+      choices: servers,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.serverName);
+      },
+    );
+  }
+
+  void searchUsers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<User>(
+      query: term,
+      choices: users,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.username);
+      },
+    );
   }
 
   // Display all the channels in every category in every server
