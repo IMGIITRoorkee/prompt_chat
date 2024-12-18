@@ -42,10 +42,10 @@ void runApp(ChatAPI api) async {
             print("Successfully logged out, see you again!");
             break;
           }
-        case 'current-session' :
-        {
-          print("$currUsername is logged in");
-        }  
+        case 'current-session':
+          {
+            print("$currUsername is logged in");
+          }
         case "create-server":
           {
             await api.createServer(ccs[1], currUsername, ccs[2]);
@@ -136,6 +136,20 @@ void runApp(ChatAPI api) async {
             if (confirm == "y" || confirm == "yes") {
               await api.leaveServer(ccs[1], currUsername);
               print("Member deleted");
+            }
+            break;
+          }
+        case "kickout-member":
+          {
+            print("Are you sure you want to proceed? (y/n)");
+            var confirm = stdin.readLineSync();
+            if (confirm == null) {
+              break;
+            }
+            confirm = confirm.toLowerCase();
+            if (confirm == "y" || confirm == "yes") {
+              await api.kickoutFromServer(ccs[1], ccs[2], currUsername);
+              print("Member kicked out");
             }
             break;
           }

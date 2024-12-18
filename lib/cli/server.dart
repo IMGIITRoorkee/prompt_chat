@@ -113,10 +113,9 @@ class Server {
     if (map['channels'] == null) {
       unmappedChannels = [];
     }
-    if(map['joinPerm'] == "JoinPerm.closed") {
+    if (map['joinPerm'] == "JoinPerm.closed") {
       perm = JoinPerm.closed;
-    }
-    else {
+    } else {
       perm = JoinPerm.open;
     }
     unmappedMembers =
@@ -265,6 +264,14 @@ class Server {
     senderRoles.firstWhere((element) => element.accessLevel.index == accessNo,
         orElse: () =>
             throw Exception("You are not authorised for this action"));
+  }
+
+  bool isAccessAllowed(String username, int accessNo) {
+    var user = getMember(username);
+
+    List<Role> senderRoles = extractRoles(user);
+    print(senderRoles);
+    return senderRoles.any((role) => role.accessLevel.index == accessNo);
   }
 
   List<Role> extractRoles(User user) {
