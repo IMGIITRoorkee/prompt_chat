@@ -171,6 +171,7 @@ class ChatAPI {
     await reqServer.addMember(reqUser);
   }
 
+  // Allows mods & owner to remove member from server.
   Future<void> kickoutFromServer(
       String? serverName, String? userName, String? callerName) async {
     if (serverName == null || userName == null || callerName == null) {
