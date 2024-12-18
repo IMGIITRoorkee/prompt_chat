@@ -167,7 +167,7 @@ class ChatAPI {
     }
     var reqUser = getUser(userName);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(ownerName, 2);
+    reqServer.checkAccessLevels(ownerName, [1, 2]);
     await reqServer.addMember(reqUser);
   }
 
@@ -207,7 +207,7 @@ class ChatAPI {
           "Please enter the valid credentials, or login to continue.");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
         .addCategory(Category(categoryName: categoryName, channels: []));
   }
@@ -233,7 +233,7 @@ class ChatAPI {
     var chanType = getChannelType(channelType);
     var perm = getPermission(channelPerm);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer.addChannel(
         Channel(
             channelName: channelName,
@@ -327,7 +327,7 @@ class ChatAPI {
       throw Exception("Enter a valid command");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     if (!(reqServer.isMember(memberName))) {
       throw Exception("User is not a member of the server");
     }
@@ -349,7 +349,8 @@ class ChatAPI {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     await reqServer.assignChannel(channelName, categoryName);
   }
 
