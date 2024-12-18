@@ -74,6 +74,7 @@ class ChatAPI {
     someoneLoggedIn = true;
   }
 
+  // Checks if the password is atleast 8 characters long, having atleast a number & a special character
   bool isPasswordValid(String password) {
     if (password.length < 8) {
       return false;
