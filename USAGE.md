@@ -7,12 +7,19 @@ Use `login username password` to login as an existing user. Note that only one u
 ### Logout
 Use `logout` to logout of the session.
 
+## Users
+
+### Searching users
+Use `search-users search_term` to search for users (max 5 users are returned)
+
 ## Servers
 
 ### Create a server
 Use `create-server server_name join_permission` to create a new server.  You will automatically be marked as the owner of that server and gain the ability to add other users, add categories, channels and manage permissions. `join_permission` can be either set as open or closed. Open servers can be joined by any users, while closed servers require owner to add new members. It is set to open by default.
 ### Joining a server 
 Use `join-server server_name` to join a server, granted the server is open.
+### Searching servers
+Use `search-servers search_term` to search for servers (max 5 servers are returned)
 ### Add users to a server
 Use `add-member server_name user_name` to add existing users to a server. Ypu must be logged in to do so. The added user will automatically be given member privileges.
 ### Add categories to a server
