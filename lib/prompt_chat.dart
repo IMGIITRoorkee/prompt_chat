@@ -12,13 +12,19 @@ import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
 
 class ChatAPI {
-    List<User> users = [];
+  List<User> users = [];
   List<Server> servers = [];
   bool someoneLoggedIn = false;
+
   Future<void> populateArrays() async {
     // users.forEach((element) {print(element.username);});
     users = await UserIO.getAllUsers();
     servers = await ServerIO.getAllServers();
+  }
+
+  Future<bool> isUsernameExists(String username) async {
+    var usernames = users.map((e) => e.username).toList();
+    return usernames.contains(username);
   }
 
   //Users
@@ -26,8 +32,7 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
-    var usernames = users.map((e) => e.username).toList();
-    if (usernames.contains(username)) {
+    if (await isUsernameExists(username)) {
       throw Exception("User already exists");
     }
     var newUser = User(username, password, false);
@@ -92,31 +97,35 @@ class ChatAPI {
   }
 
   //Servers
-  Future<void> createServer(String? serverName, String? userName, String? serverPerm) async {
-    late JoinPerm perm;
+  Future<void> createServer(
+      String? serverName, String? userName, String? serverPerm) async {
     if (serverName == null || userName == null) {
       throw Exception(
           "Please enter the required credentials, or login to continue.");
     }
-    if(serverPerm == null) {
-      perm = JoinPerm.open;
-    }
-    if(serverPerm == "closed") {
-      perm = JoinPerm.closed;
-    }
-    else {
-      perm = JoinPerm.open;
-    }
+    JoinPerm joinPerm = getJoinPerm(serverPerm);
     var creator = getUser(userName);
-    var newServer = Server(
-        serverName: serverName,
-        members: [],
-        roles: [],
-        categories: [Category(categoryName: "none", channels: [])],
-        channels: [],
-        joinPerm: perm);
+    var newServer = createNewServer(serverName, joinPerm);
     servers.add(newServer);
     await newServer.instantiateServer(creator);
+  }
+
+  JoinPerm getJoinPerm(String? serverPerm) {
+    if (serverPerm == "closed") {
+      return JoinPerm.closed;
+    }
+    return JoinPerm.open;
+  }
+
+  Server createNewServer(String serverName, JoinPerm perm) {
+    return Server(
+      serverName: serverName,
+      members: [],
+      roles: [],
+      categories: [Category(categoryName: "none", channels: [])],
+      channels: [],
+      joinPerm: perm,
+    );
   }
 
   Server getServer(String name) {
@@ -164,24 +173,9 @@ class ChatAPI {
           "Please enter the valid credentials, or login to continue.");
     }
     parentCategoryName ??= "none";
-    late ChannelType chanType;
-    late Permission perm;
-    //bad pattern
-    if (channelType == "video") {
-      chanType = ChannelType.video;
-    } else if (channelType == "voice") {
-      chanType = ChannelType.voice;
-    } else {
-      chanType = ChannelType.text;
-    }
-    if (channelPerm == "owner") {
-      perm = Permission.owner;
-    } else if (channelPerm == "moderator") {
-      perm = Permission.moderator;
-    } else {
-      perm = Permission.member;
-    }
 
+    var chanType = getChannelType(channelType);
+    var perm = getPermission(channelPerm);
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevel(userName, 2);
     await reqServer.addChannel(
@@ -191,6 +185,28 @@ class ChatAPI {
             type: chanType,
             permission: perm),
         parentCategoryName);
+  }
+
+  ChannelType getChannelType(String channelType) {
+    switch (channelType) {
+      case "video":
+        return ChannelType.video;
+      case "voice":
+        return ChannelType.voice;
+      default:
+        return ChannelType.text;
+    }
+  }
+
+  Permission getPermission(String channelPerm) {
+    switch (channelPerm) {
+      case "owner":
+        return Permission.owner;
+      case "moderator":
+        return Permission.moderator;
+      default:
+        return Permission.member;
+    }
   }
 
   Future<void> sendMessageInServer(String? serverName, String? userName,
@@ -216,24 +232,28 @@ class ChatAPI {
 
   Future<void> createRole(String? serverName, String? roleName,
       String? permLevel, String? callerName) async {
-    late Permission newPerm;
     if (serverName == null ||
         roleName == null ||
         permLevel == null ||
         callerName == null) {
       throw Exception("Invalid command");
     }
-    if (permLevel == "owner") {
-      throw Exception("Owner privileges cannot be shared to other roles.");
-    } else if (permLevel == "moderator") {
-      newPerm = Permission.moderator;
-    } else {
-      newPerm = Permission.member;
-    }
+
+    var newPerm = getRolePermission(permLevel);
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevel(callerName, 2);
     await reqServer
         .addRole(Role(roleName: roleName, accessLevel: newPerm, holders: []));
+  }
+
+  Permission getRolePermission(String? permLevel) {
+    if (permLevel == "owner") {
+      throw Exception("Owner privileges cannot be shared to other roles.");
+    } else if (permLevel == "moderator") {
+      return Permission.moderator;
+    } else {
+      return Permission.member;
+    }
   }
 
   Future<void> addRoleToUser(String? serverName, String? roleName,
@@ -278,18 +298,9 @@ class ChatAPI {
         callerName == null) {
       throw Exception("Please enter a valid command, or login to continue");
     }
-    late Permission perm;
+    var perm = getPermission(newPerm);
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevel(callerName, 2);
-    if (newPerm == "owner") {
-      perm = Permission.owner;
-    } else if (newPerm == "moderator") {
-      perm = Permission.moderator;
-    } else if (newPerm == "member") {
-      perm = Permission.member;
-    } else {
-      throw Exception("Please enter a valid permission");
-    }
     await reqServer.changePerm(channelName, perm);
   }
 
@@ -307,17 +318,19 @@ class ChatAPI {
     }
     await reqServer.swapOwner(currentOwner, newOwner);
   }
+
   Future<void> joinServer(String? serverName, String? joinerName) async {
-    if(serverName == null || joinerName == null) {
+    if (serverName == null || joinerName == null) {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqUser = getUser(joinerName);
     var reqServer = getServer(serverName);
-    if(reqServer.isMember(reqUser.username)) {
+    if (reqServer.isMember(reqUser.username)) {
       throw Exception("The user is already a member of the server");
     }
-    if(reqServer.joinPerm == JoinPerm.closed) {
-      throw Exception("The server is not open to join, ask to be added to the server by the owner");
+    if (reqServer.joinPerm == JoinPerm.closed) {
+      throw Exception(
+          "The server is not open to join, ask to be added to the server by the owner");
     }
     await reqServer.addMember(reqUser);
   }
@@ -349,5 +362,4 @@ class ChatAPI {
       }
     }
   }
-
 }
