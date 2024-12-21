@@ -12,7 +12,7 @@ import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
 
 class ChatAPI {
-    List<User> users = [];
+  List<User> users = [];
   List<Server> servers = [];
   bool someoneLoggedIn = false;
   Future<void> populateArrays() async {
@@ -26,14 +26,18 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
-    var usernames = users.map((e) => e.username).toList();
-    if (usernames.contains(username)) {
-      throw Exception("User already exists");
-    }
+    validUsername(username);
     var newUser = User(username, password, false);
 
     users.add(newUser);
     await newUser.register();
+  }
+
+  void validUsername(String username) {
+    var usernames = users.map((e) => e.username).toList();
+    if (usernames.contains(username)) {
+      throw Exception("User already exists");
+    }
   }
 
   void displayMessages(String? serverName) {
@@ -71,6 +75,33 @@ class ChatAPI {
     await reqUser.logout();
   }
 
+  Future<void> updateUsername(String? username, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (username == null) {
+      throw Exception("Valid username must be provided");
+    }
+    validUsername(username);
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(username, null, oldPass);
+  }
+
+  Future<void> updatePassword(String? newPass, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (newPass == null) {
+      throw Exception("Valid username must be provided");
+    }
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(null, newPass, oldPass);
+  }
+
   User getUser(String name) {
     return users.firstWhere((user) => user.username == name,
         orElse: () => throw Exception("User does not exist"));
@@ -92,19 +123,19 @@ class ChatAPI {
   }
 
   //Servers
-  Future<void> createServer(String? serverName, String? userName, String? serverPerm) async {
+  Future<void> createServer(
+      String? serverName, String? userName, String? serverPerm) async {
     late JoinPerm perm;
     if (serverName == null || userName == null) {
       throw Exception(
           "Please enter the required credentials, or login to continue.");
     }
-    if(serverPerm == null) {
+    if (serverPerm == null) {
       perm = JoinPerm.open;
     }
-    if(serverPerm == "closed") {
+    if (serverPerm == "closed") {
       perm = JoinPerm.closed;
-    }
-    else {
+    } else {
       perm = JoinPerm.open;
     }
     var creator = getUser(userName);
@@ -307,17 +338,19 @@ class ChatAPI {
     }
     await reqServer.swapOwner(currentOwner, newOwner);
   }
+
   Future<void> joinServer(String? serverName, String? joinerName) async {
-    if(serverName == null || joinerName == null) {
+    if (serverName == null || joinerName == null) {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqUser = getUser(joinerName);
     var reqServer = getServer(serverName);
-    if(reqServer.isMember(reqUser.username)) {
+    if (reqServer.isMember(reqUser.username)) {
       throw Exception("The user is already a member of the server");
     }
-    if(reqServer.joinPerm == JoinPerm.closed) {
-      throw Exception("The server is not open to join, ask to be added to the server by the owner");
+    if (reqServer.joinPerm == JoinPerm.closed) {
+      throw Exception(
+          "The server is not open to join, ask to be added to the server by the owner");
     }
     await reqServer.addMember(reqUser);
   }
@@ -349,5 +382,4 @@ class ChatAPI {
       }
     }
   }
-
 }
