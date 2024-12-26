@@ -171,6 +171,34 @@ class ChatAPI {
     await reqServer.addMember(reqUser);
   }
 
+  // Allows mods & owner to remove member from server.
+  Future<void> kickoutFromServer(
+      String? serverName, String? userName, String? callerName) async {
+    if (serverName == null || userName == null || callerName == null) {
+      throw Exception(
+          "Please enter the correct command, or login to continue.");
+    }
+    var reqServer = getServer(serverName);
+
+    if (reqServer.getRole("owner").holders[0].username == userName) {
+      throw Exception("The owner cannot be kicked out of the server.");
+    }
+
+    // check if the caller is owner
+    if (reqServer.getRole("owner").holders[0].username == callerName) {
+      leaveServer(serverName, userName);
+    } else {
+      // confirm that the caller is moderator
+      reqServer.checkAccessLevel(callerName, 1);
+
+      // check if the user being kicked out is not another moderator
+      if (reqServer.isAccessAllowed(userName, 1)) {
+        throw Exception("A moderator cannot kick out another moderator.");
+      }
+      leaveServer(serverName, userName);
+    }
+  }
+
   // Add a category to server
   Future<void> addCategoryToServer(
       String? serverName, String? categoryName, String? userName) async {
