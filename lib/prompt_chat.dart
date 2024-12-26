@@ -1,6 +1,7 @@
 import 'dart:core';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
+import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
 import 'package:prompt_chat/cli/message.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/server.dart';
@@ -62,12 +63,25 @@ class ChatAPI {
     if (password == null || username == null) {
       throw InvalidCredentialsException();
     }
+    if (!isPasswordValid(password)) {
+      throw WeakPasswordException();
+    }
     if (someoneLoggedIn) {
       throw Exception("Please logout of the current session to login again");
     }
     var reqUser = getUser(username);
     await reqUser.login(password);
     someoneLoggedIn = true;
+  }
+
+  // Checks if the password is atleast 8 characters long, having atleast a number & a special character
+  bool isPasswordValid(String password) {
+    if (password.length < 8) {
+      return false;
+    }
+    bool hasNum = password.contains(RegExp(r'[0-9]'));
+    bool hasChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+    return hasNum && hasChar;
   }
 
   // Logout a user
