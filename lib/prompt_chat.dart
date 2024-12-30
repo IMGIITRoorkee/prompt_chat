@@ -58,6 +58,40 @@ class ChatAPI {
     }
   }
 
+  // Display all the servers, categories and channels associated with the user.
+  void displayUserServers() {
+    // Create indentation using '\t' repeated 'level' times
+    void printIndented(String text, int level) {
+      print('${'\t' * level}- $text');
+    }
+
+    var username = getCurrentLoggedIn();
+    if (username == null) throw Exception("You must be logged in!");
+    List<Server> userServers =
+        servers.where((element) => element.isMember(username)).toList();
+
+    for (var server in userServers) {
+      print(server.serverName);
+
+      for (var category in server.categories) {
+        printIndented("Category: ${category.categoryName}", 1);
+
+        List<Channel> channels = [];
+        if (server.isAccessAllowed(username, 2)) {
+          channels = category.channels;
+        } else if (server.isAccessAllowed(username, 1)) {
+          channels = category.channels
+              .where((element) => element.permission != Permission.owner)
+              .toList();
+        }
+
+        for (var channel in channels) {
+          printIndented("Channel: ${channel.channelName}", 2);
+        }
+      }
+    }
+  }
+
   // Login a user
   Future<void> loginUser(String? username, String? password) async {
     if (password == null || username == null) {

@@ -95,6 +95,11 @@ void runApp(ChatAPI api) async {
             api.displayChannels();
             break;
           }
+        case "display-my-servers":
+          {
+            api.displayUserServers();
+            break;
+          }
         case "create-role":
           {
             await api.createRole(ccs[1], ccs[2], ccs[3], currUsername);
