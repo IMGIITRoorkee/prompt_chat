@@ -1,3 +1,4 @@
+import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
 
@@ -12,7 +13,7 @@ void runApp(ChatAPI api) async {
   String? currentCommand;
   currUsername = api.getCurrentLoggedIn();
   print(
-      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.");
+      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.Type \"help\" for a list of commands.");
   loop:
   while (true) {
     try {
@@ -162,6 +163,10 @@ void runApp(ChatAPI api) async {
           {
             print("See you soon!");
             break loop;
+          }
+        case "help":
+          {
+            print(helpText);
           }
         default:
           {
