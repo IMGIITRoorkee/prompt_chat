@@ -32,7 +32,7 @@ void runApp(ChatAPI api) async {
           {
             await api.loginUser(ccs[1], ccs[2]);
             currUsername = ccs[1];
-            print("Login successful!");
+            print("\x1B[92m Login successful!\n Welcome \x1B[96m $currUsername \x1B[0m");
             break;
           }
         case "logout":
