@@ -11,7 +11,7 @@ Future<String?> getUserInputWithTimeout() async {
   StreamSubscription? subscription;
 
   // Set timeout
-  Timer timeout = Timer(Duration(seconds: 10), () {
+  Timer timeout = Timer(Duration(minutes: 10), () {
     if (!completer.isCompleted) {
       completer.complete(null);
       subscription?.cancel();
