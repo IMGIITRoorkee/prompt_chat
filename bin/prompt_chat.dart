@@ -158,6 +158,11 @@ void runApp(ChatAPI api) async {
             await api.joinServer(ccs[1], currUsername);
             print("Server joined successfully.");
           }
+        case 'clear-screen':
+          {
+            print("\x1B[2J\x1B[H");
+            break;
+          }
         case "exit":
           {
             print("See you soon!");
