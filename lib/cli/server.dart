@@ -266,6 +266,23 @@ class Server {
             throw Exception("You are not authorised for this action"));
   }
 
+  void checkAccessLevels(String username, List<int> accessNos) {
+    var user = getMember(username);
+    if (!(user.loggedIn)) {
+      throw Exception("User is not logged in");
+    }
+    List<Role> senderRoles = extractRoles(user);
+    print(senderRoles);
+    senderRoles.firstWhere((element) {
+      for (int a in accessNos) {
+        if (element.accessLevel.index == a) {
+          return true;
+        }
+      }
+      return false;
+    }, orElse: () => throw Exception("You are not authorised for this action"));
+  }
+
   bool isAccessAllowed(String username, int accessNo) {
     var user = getMember(username);
 

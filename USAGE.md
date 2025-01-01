@@ -11,6 +11,11 @@ Use `login --username <username> --password <password>` to login as an existing 
 ### Logout
 Use `logout` to logout of the session.
 
+## Users
+
+### Searching users
+Use `search-users search_term` to search for users (max 5 users are returned)
+
 ## Servers
 
 ### Create a server
