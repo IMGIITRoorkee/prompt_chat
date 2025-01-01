@@ -5,6 +5,9 @@ class User {
   late String username;
   late String password;
   var loggedIn = false;
+
+  Map<String, dynamic>? _snapshot;
+
   User(this.username, this.password, this.loggedIn);
   //to be called upon object creation
   Map<String, dynamic> toMap() {
@@ -24,33 +27,42 @@ class User {
     );
   }
 
+  void _rollbackToSnapshot() {
+    if (_snapshot == null) return;
+    username = _snapshot!['username'];
+    password = _snapshot!['password'];
+    loggedIn = _snapshot!['loggedIn'];
+  }
+
   Future<void> login(String password) async {
     bool authed = BCrypt.checkpw(password, this.password);
     if (!(authed)) {
       throw Exception("Error : Incorrect password");
     }
+    _snapshot = toMap();
+
     loggedIn = true;
-    await UserIO.updateDB(
-        User(
-            username,
-            password,
-            true
-            ));
+    bool res = await UserIO.updateDB(
+      User(username, password, true),
+    );
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> register() async {
+    _snapshot = toMap();
+
     var salt = BCrypt.gensalt();
     password = BCrypt.hashpw(password, salt);
-    await DatabaseIO.addToDB(this, "users");
+    bool res = await DatabaseIO.addToDB(this, "users");
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> logout() async {
+    _snapshot = toMap();
     //abhi ke liye no checks
-    await UserIO.updateDB(
-        User(
-            username,
-            password,
-            false
-            ));
+    bool res = await UserIO.updateDB(User(username, password, false));
+    if (!res) _rollbackToSnapshot();
   }
 }
