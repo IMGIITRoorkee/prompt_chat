@@ -36,13 +36,18 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
-    if (await isUsernameExists(username)) {
-      throw Exception("User already exists");
-    }
+    validUsername(username);
     var newUser = User(username, password, false);
 
     users.add(newUser);
     await newUser.register();
+  }
+
+  void validUsername(String username) {
+    var usernames = users.map((e) => e.username).toList();
+    if (usernames.contains(username)) {
+      throw Exception("User already exists");
+    }
   }
 
   // Display all the messages in a given server
@@ -128,6 +133,33 @@ class ChatAPI {
     reqUser.loggedIn = false;
     someoneLoggedIn = false;
     await reqUser.logout();
+  }
+
+  Future<void> updateUsername(String? username, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (username == null) {
+      throw Exception("Valid username must be provided");
+    }
+    validUsername(username);
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(username, null, oldPass);
+  }
+
+  Future<void> updatePassword(String? newPass, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (newPass == null) {
+      throw Exception("Valid username must be provided");
+    }
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(null, newPass, oldPass);
   }
 
   // Get user object from username

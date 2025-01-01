@@ -43,6 +43,19 @@ void runApp(ChatAPI api) async {
             print("Successfully logged out, see you again!");
             break;
           }
+        case "update-username":
+          {
+            await api.updateUsername(ccs[1], ccs[2]);
+            currUsername = ccs[1];
+            print("Successfully updated username!");
+            break;
+          }
+        case "update-password":
+          {
+            await api.updatePassword(ccs[1], ccs[2]);
+            print("Successfully updated password!");
+            break;
+          }
         case 'current-session':
           {
             print("$currUsername is logged in");
