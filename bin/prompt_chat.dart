@@ -1,4 +1,5 @@
 import 'package:prompt_chat/cli/logsysten/logger_service.dart';
+import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
 
@@ -16,7 +17,7 @@ void runApp(ChatAPI api) async {
   String? currentCommand;
   currUsername = api.getCurrentLoggedIn();
   print(
-      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.");
+      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.Type \"help\" for a list of commands.");
   loop:
   while (true) {
     try {
@@ -102,9 +103,24 @@ void runApp(ChatAPI api) async {
             api.displayUsers();
             break;
           }
+        case "search-users":
+          {
+            api.searchUsers(ccs[1]);
+            break;
+          }
+        case "search-servers":
+          {
+            api.searchServers(ccs[1]);
+            break;
+          }
         case "display-channels":
           {
             api.displayChannels();
+            break;
+          }
+        case "display-my-servers":
+          {
+            api.displayUserServers();
             break;
           }
         case "create-role":
@@ -187,6 +203,9 @@ void runApp(ChatAPI api) async {
           {
             print(await logger.getLogs());
             break;
+        case "help":
+          {
+            print(helpText);
           }
         default:
           {

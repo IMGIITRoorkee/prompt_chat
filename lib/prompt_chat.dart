@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
@@ -55,6 +56,40 @@ class ChatAPI {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
         print("${message.sender.username} : ${message.content}");
+      }
+    }
+  }
+
+  // Display all the servers, categories and channels associated with the user.
+  void displayUserServers() {
+    // Create indentation using '\t' repeated 'level' times
+    void printIndented(String text, int level) {
+      print('${'\t' * level}- $text');
+    }
+
+    var username = getCurrentLoggedIn();
+    if (username == null) throw Exception("You must be logged in!");
+    List<Server> userServers =
+        servers.where((element) => element.isMember(username)).toList();
+
+    for (var server in userServers) {
+      print(server.serverName);
+
+      for (var category in server.categories) {
+        printIndented("Category: ${category.categoryName}", 1);
+
+        List<Channel> channels = [];
+        if (server.isAccessAllowed(username, 2)) {
+          channels = category.channels;
+        } else if (server.isAccessAllowed(username, 1)) {
+          channels = category.channels
+              .where((element) => element.permission != Permission.owner)
+              .toList();
+        }
+
+        for (var channel in channels) {
+          printIndented("Channel: ${channel.channelName}", 2);
+        }
       }
     }
   }
@@ -168,7 +203,7 @@ class ChatAPI {
     }
     var reqUser = getUser(userName);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(ownerName, 2);
+    reqServer.checkAccessLevels(ownerName, [1, 2]);
     await reqServer.addMember(reqUser);
   }
 
@@ -208,7 +243,7 @@ class ChatAPI {
           "Please enter the valid credentials, or login to continue.");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
         .addCategory(Category(categoryName: categoryName, channels: []));
   }
@@ -234,7 +269,7 @@ class ChatAPI {
     var chanType = getChannelType(channelType);
     var perm = getPermission(channelPerm);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer.addChannel(
         Channel(
             channelName: channelName,
@@ -328,7 +363,7 @@ class ChatAPI {
       throw Exception("Enter a valid command");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     if (!(reqServer.isMember(memberName))) {
       throw Exception("User is not a member of the server");
     }
@@ -350,7 +385,8 @@ class ChatAPI {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     await reqServer.assignChannel(channelName, categoryName);
   }
 
@@ -418,6 +454,38 @@ class ChatAPI {
           "Please change ownership before leaving your server, as you are the owner");
     }
     await reqServer.removeMember(callerName);
+  }
+
+  void searchServers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<Server>(
+      query: term,
+      choices: servers,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.serverName);
+      },
+    );
+  }
+
+  void searchUsers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<User>(
+      query: term,
+      choices: users,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.username);
+      },
+    );
   }
 
   // Display all the channels in every category in every server

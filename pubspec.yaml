@@ -13,6 +13,7 @@ dependencies:
   bcrypt: ^1.1.3
   path_provider: ^2.1.5
   logger: ^2.5.0
+  fuzzywuzzy: ^1.2.0
   # path: ^1.8.0
 
 dev_dependencies:
