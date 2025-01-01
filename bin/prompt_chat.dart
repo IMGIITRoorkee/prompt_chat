@@ -45,7 +45,7 @@ void runApp(ChatAPI api) async {
         case "update-username":
           {
             await api.updateUsername(ccs[1], ccs[2]);
-            currUsername = ccs[2];
+            currUsername = ccs[1];
             print("Successfully updated username!");
             break;
           }
