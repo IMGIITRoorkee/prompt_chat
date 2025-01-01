@@ -1,3 +1,4 @@
+import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
 
@@ -106,9 +107,24 @@ clearCLI();
             api.displayUsers();
             break;
           }
+        case "search-users":
+          {
+            api.searchUsers(ccs[1]);
+            break;
+          }
+        case "search-servers":
+          {
+            api.searchServers(ccs[1]);
+            break;
+          }
         case "display-channels":
           {
             api.displayChannels();
+            break;
+          }
+        case "display-my-servers":
+          {
+            api.displayUserServers();
             break;
           }
         case "create-role":
@@ -178,6 +194,10 @@ clearCLI();
           {
             print("See you soon!");
             break loop;
+          }
+        case "help":
+          {
+            print(helpText);
           }
         default:
           {
