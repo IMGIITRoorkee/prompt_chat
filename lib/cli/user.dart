@@ -34,7 +34,7 @@ class User {
   }
 
   Future<void> update(String? username, String? newPass, String oldPass) async {
-    bool authed = BCrypt.checkpw(oldPass, password);
+    bool authed = BCrypt.checkpw(oldPass, this.password);
     if (!(authed)) {
       throw Exception("Error : Incorrect password");
     }
