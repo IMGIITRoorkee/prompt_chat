@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
@@ -201,7 +202,7 @@ class ChatAPI {
     }
     var reqUser = getUser(userName);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(ownerName, 2);
+    reqServer.checkAccessLevels(ownerName, [1, 2]);
     await reqServer.addMember(reqUser);
   }
 
@@ -241,7 +242,7 @@ class ChatAPI {
           "Please enter the valid credentials, or login to continue.");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
         .addCategory(Category(categoryName: categoryName, channels: []));
   }
@@ -267,7 +268,7 @@ class ChatAPI {
     var chanType = getChannelType(channelType);
     var perm = getPermission(channelPerm);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer.addChannel(
         Channel(
             channelName: channelName,
@@ -361,7 +362,7 @@ class ChatAPI {
       throw Exception("Enter a valid command");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     if (!(reqServer.isMember(memberName))) {
       throw Exception("User is not a member of the server");
     }
@@ -383,7 +384,8 @@ class ChatAPI {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     await reqServer.assignChannel(channelName, categoryName);
   }
 
@@ -451,6 +453,38 @@ class ChatAPI {
           "Please change ownership before leaving your server, as you are the owner");
     }
     await reqServer.removeMember(callerName);
+  }
+
+  void searchServers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<Server>(
+      query: term,
+      choices: servers,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.serverName);
+      },
+    );
+  }
+
+  void searchUsers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<User>(
+      query: term,
+      choices: users,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.username);
+      },
+    );
   }
 
   // Display all the channels in every category in every server

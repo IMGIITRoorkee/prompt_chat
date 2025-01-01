@@ -90,6 +90,16 @@ void runApp(ChatAPI api) async {
             api.displayUsers();
             break;
           }
+        case "search-users":
+          {
+            api.searchUsers(ccs[1]);
+            break;
+          }
+        case "search-servers":
+          {
+            api.searchServers(ccs[1]);
+            break;
+          }
         case "display-channels":
           {
             api.displayChannels();
