@@ -108,6 +108,11 @@ void runApp(ChatAPI api) async {
             api.displayChannels();
             break;
           }
+        case "display-my-servers":
+          {
+            api.displayUserServers();
+            break;
+          }
         case "create-role":
           {
             await api.createRole(ccs[1], ccs[2], ccs[3], currUsername);
@@ -149,6 +154,20 @@ void runApp(ChatAPI api) async {
             if (confirm == "y" || confirm == "yes") {
               await api.leaveServer(ccs[1], currUsername);
               print("Member deleted");
+            }
+            break;
+          }
+        case "kickout-member":
+          {
+            print("Are you sure you want to proceed? (y/n)");
+            var confirm = stdin.readLineSync();
+            if (confirm == null) {
+              break;
+            }
+            confirm = confirm.toLowerCase();
+            if (confirm == "y" || confirm == "yes") {
+              await api.kickoutFromServer(ccs[1], ccs[2], currUsername);
+              print("Member kicked out");
             }
             break;
           }

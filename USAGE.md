@@ -41,3 +41,5 @@ Use `change-perm server_name channel_name new_perm` to change the permissions fo
 Use `change-ownership server_name new_owner` to give your owner rights to `new_owner`.
 ### Leave a server
 Use `leave-server server_name` to leave a server. Note that you must relinquish your ownership rights using `change-ownership` first before leaving a server if you are its owner.
+### Kickout users from server
+Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner or moderator for this. 
