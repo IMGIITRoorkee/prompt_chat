@@ -196,6 +196,17 @@ void runApp(ChatAPI api) async {
           {
             print(helpText);
           }
+        case "delete-user":
+          {
+            if (currUsername == null) {
+              print("Please login first.");
+              break;
+            }
+            await api.logoutUser(currUsername);
+            currUsername = null;
+            api.deleteUser(currUsername);
+            print("User deleted successfully.");
+          }
         default:
           {
             print("Please enter a valid command.");
