@@ -38,7 +38,7 @@ void runApp(ChatAPI api) async {
           {
             await api.loginUser(ccs[1], ccs[2]);
             currUsername = ccs[1];
-            print("Login successful!");
+            print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
             logger.info("User logged in", ccs[1]);
             break;
           }
@@ -48,6 +48,19 @@ void runApp(ChatAPI api) async {
             logger.info("User logged out", currUsername as String);
             currUsername = null;
             print("Successfully logged out, see you again!");
+            break;
+          }
+        case "update-username":
+          {
+            await api.updateUsername(ccs[1], ccs[2]);
+            currUsername = ccs[1];
+            print("Successfully updated username!");
+            break;
+          }
+        case "update-password":
+          {
+            await api.updatePassword(ccs[1], ccs[2]);
+            print("Successfully updated password!");
             break;
           }
         case 'current-session':
