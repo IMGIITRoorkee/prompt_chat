@@ -1,3 +1,4 @@
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/role.dart';
 import 'package:prompt_chat/cli/category.dart';
@@ -12,6 +13,7 @@ class Server {
   List<Role> roles;
   List<Category> categories;
   List<Channel> channels;
+  List<InviteCode> inviteCodes = [];
   late String serverName;
   late JoinPerm joinPerm;
   Server(

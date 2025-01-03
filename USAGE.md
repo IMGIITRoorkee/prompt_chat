@@ -50,3 +50,7 @@ Use `change-ownership server_name new_owner` to give your owner rights to `new_o
 Use `leave-server server_name` to leave a server. Note that you must relinquish your ownership rights using `change-ownership` first before leaving a server if you are its owner.
 ### Kickout users from server
 Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner/moderator for this. 
+### Create a invite code for server
+Use `create-invite-code server_name` to create an invite code for a server. Note that you must be an owner/moderator for this.
+### Join a servre with code
+Use `join-server-with-code invite_code` to join a server with an invite code.
