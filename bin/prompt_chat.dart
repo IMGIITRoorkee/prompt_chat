@@ -196,7 +196,7 @@ void runApp(ChatAPI api) async {
           print("Invite code created successfully. \n Use code: $code");
           break;
         }
-        case"Join-server-with-code":
+        case"join-server-with-code":
         {
           if (currUsername == null) {
             throw Exception("Please login to create an invite code.");
