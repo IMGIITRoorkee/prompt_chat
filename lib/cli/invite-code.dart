@@ -29,6 +29,7 @@ class InviteCode {
       'code': code,
       'server': server.toMap(),
       'invitedUsers': invitedUsers.map((e) => e.toMap()).toList(),
+      'finder' : "finder",
     };
   }
 

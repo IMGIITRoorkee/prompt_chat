@@ -549,14 +549,14 @@ class ChatAPI {
       }
     }
     reqServer.inviteCodes.add(inviteCode);
-    InviteCodeIO.updateDB(inviteCode);
+    await DatabaseIO.addToDB(inviteCode,"invitecodes");
+    inviteCodes.add(inviteCode);
     return inviteCode.code;
 
   }
 
   // join server using invite code
   Future<void> joinServerWithCode(String inviteCode, String username) async {
-    print(inviteCodes);
     var invite = inviteCodes.firstWhere((element) => element.code == inviteCode,
         orElse: () => throw Exception("Invalid invite code"));
     var reqUser = getUser(username);
