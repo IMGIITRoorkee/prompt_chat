@@ -1,11 +1,52 @@
+import 'package:prompt_chat/cli/exceptions/timeout.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
+import 'dart:async';
+
+// Create a broadcast stream that can be listened to multiple times
+final stdinBroadcast = stdin.asBroadcastStream();
+
+Future<String?> getUserInputWithTimeout() async {
+  Completer<String?> completer = Completer<String?>();
+  StreamSubscription? subscription;
+
+  // Set timeout
+  Timer timeout = Timer(Duration(minutes: 10), () {
+    if (!completer.isCompleted) {
+      completer.complete(null);
+      subscription?.cancel();
+    }
+  });
+
+  // Listen to the broadcast stream
+  subscription = stdinBroadcast.listen(
+    (List<int> event) {
+      if (!completer.isCompleted) {
+        String input = String.fromCharCodes(event).trim();
+        completer.complete(input);
+        timeout.cancel();
+      }
+    },
+    onError: (error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+        timeout.cancel();
+      }
+    },
+  );
+
+  try {
+    return await completer.future;
+  } finally {
+    subscription.cancel();
+    timeout.cancel();
+  }
+}
 
 void main(List<String> arguments) {
   ChatAPI api = ChatAPI();
   Future.wait([api.populateArrays()]).then((value) => {runApp(api)});
-  //rest of the application cannot start until above function completes.
 }
 
 void runApp(ChatAPI api) async {
@@ -17,9 +58,11 @@ void runApp(ChatAPI api) async {
   loop:
   while (true) {
     try {
-      currentCommand = stdin.readLineSync();
+      currentCommand = await getUserInputWithTimeout();
+
       if (currentCommand == null) {
-        throw Exception("Please enter a command");
+        api.logoutUser(currUsername);
+        throw TimedoutLogoutException();
       }
       var ccs = currentCommand.split(" ");
       switch (ccs[0]) {
