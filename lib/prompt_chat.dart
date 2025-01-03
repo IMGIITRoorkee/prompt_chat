@@ -34,6 +34,7 @@ class ChatAPI {
   // Register a user
   Future<void> registerUser(String? username, String? password) async {
     if (username == null || password == null) {
+      
       throw InvalidCredentialsException();
     }
     validUsername(username);
