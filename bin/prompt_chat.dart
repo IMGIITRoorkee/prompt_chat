@@ -33,7 +33,7 @@ void runApp(ChatAPI api) async {
           {
             await api.loginUser(ccs[1], ccs[2]);
             currUsername = ccs[1];
-            print("Login successful!");
+            print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
             break;
           }
         case "logout":
@@ -205,6 +205,11 @@ void runApp(ChatAPI api) async {
           print("Server joined successfully.");
           break;
         }
+        case 'clear-screen':
+          {
+            print("\x1B[2J\x1B[H");
+            break;
+          }
         case "exit":
           {
             print("See you soon!");
