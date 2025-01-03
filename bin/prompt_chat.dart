@@ -7,13 +7,29 @@ void main(List<String> arguments) {
   Future.wait([api.populateArrays()]).then((value) => {runApp(api)});
   //rest of the application cannot start until above function completes.
 }
+void clearCLI() {
+  print("\x1B[2J\x1B[H"); // Clear the terminal
+}
 
+void printWelcomeText() {
+  const String reset = '\x1B[0m'; // Reset text style
+  const String cyan = '\x1B[96m'; // Bright cyan
+  const String yellow = '\x1B[93m'; // Bright yellow
+  const String green = '\x1B[92m'; // Bright green
+
+  print(
+      '$cyan Welcome to $yellow prompt_chat! $reset'); // Highlight app name in yellow
+  print(
+      '$green Read the documentation to get started on using the interface.$reset');
+  print(
+      '$cyan Type "exit" to close the application.$reset');
+}
 void runApp(ChatAPI api) async {
   String? currUsername;
   String? currentCommand;
   currUsername = api.getCurrentLoggedIn();
-  print(
-      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.Type \"help\" for a list of commands.");
+clearCLI();
+  printWelcomeText();
   loop:
   while (true) {
     try {
