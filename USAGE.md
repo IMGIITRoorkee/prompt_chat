@@ -10,6 +10,10 @@ Use `login --username <username> --password <password>` to login as an existing 
 
 ### Logout
 Use `logout` to logout of the session.
+### Update username
+Use `update-username new_user_name current_password` to update username. Note that you must be logged in to do so.
+### Update password
+Use `update-password new_password current_password` to update password. Note that you must be logged in to do so.
 
 ## Users
 
