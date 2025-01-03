@@ -187,6 +187,24 @@ void runApp(ChatAPI api) async {
             await api.joinServer(ccs[1], currUsername);
             print("Server joined successfully.");
           }
+        case "create-invite-code":
+        {
+          if (currUsername == null) {
+            throw Exception("Please login to create an invite code.");
+          }
+          var code = await api.createInviteCode(ccs[1], currUsername);
+          print("Invite code created successfully. \n Use code: $code");
+          break;
+        }
+        case"Join-server-with-code":
+        {
+          if (currUsername == null) {
+            throw Exception("Please login to create an invite code.");
+          }
+          await api.joinServerWithCode(ccs[1], currUsername);
+          print("Server joined successfully.");
+          break;
+        }
         case "exit":
           {
             print("See you soon!");

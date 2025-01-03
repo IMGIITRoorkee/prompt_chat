@@ -3,6 +3,7 @@ import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/message.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/server.dart';
@@ -16,6 +17,7 @@ import 'package:prompt_chat/enum/server_type.dart';
 class ChatAPI {
   List<User> users = [];
   List<Server> servers = [];
+  List<InviteCode> inviteCodes = [];
   bool someoneLoggedIn = false;
 
   // Populate users & servers array from db
@@ -23,6 +25,7 @@ class ChatAPI {
     // users.forEach((element) {print(element.username);});
     users = await UserIO.getAllUsers();
     servers = await ServerIO.getAllServers();
+    inviteCodes = await InviteCodeIO.getAllInviteCodes();
   }
 
   // Check if a given username exists
@@ -529,5 +532,39 @@ class ChatAPI {
         }
       }
     }
+  }
+
+  // create a new invite code
+  Future<String> createInviteCode(String servername, String username) async {
+    var reqServer = getServer(servername);
+    var reqUser = getUser(username);
+    reqServer.checkAccessLevels(username, [1, 2]);
+    var inviteCode = InviteCode(reqUser, "",reqServer);
+    for(var invitecode in reqServer.inviteCodes ){
+      if(invitecode.code == inviteCode.code){
+        return createInviteCode(servername, username);
+      }
+      else if (invitecode.inviter == reqUser){
+        return invitecode.code;
+      }
+    }
+    reqServer.inviteCodes.add(inviteCode);
+    InviteCodeIO.updateDB(inviteCode);
+    return inviteCode.code;
+
+  }
+
+  // join server using invite code
+  Future<void> joinServerWithCode(String inviteCode, String username) async {
+    print(inviteCodes);
+    var invite = inviteCodes.firstWhere((element) => element.code == inviteCode,
+        orElse: () => throw Exception("Invalid invite code"));
+    var reqUser = getUser(username);
+    var reqServer = invite.server;
+    if (reqServer.isMember(reqUser.username)) {
+      throw Exception("The user is already a member of the server");
+    }
+    await reqServer.addMember(reqUser);
+    invite.invitedUsers.add(reqUser);
   }
 }
