@@ -48,6 +48,10 @@ class User {
     await DatabaseIO.addToDB(this, "users");
   }
 
+  Future<void> delete() async {
+    await DatabaseIO.deleteDB(username);
+  }
+
   Future<void> logout() async {
     //abhi ke liye no checks
     await UserIO.updateDB(User(username, password, false));
