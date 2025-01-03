@@ -2,6 +2,7 @@ import 'dart:core';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
+import 'package:prompt_chat/cli/direct_message.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
 import 'package:prompt_chat/cli/message.dart';
 import 'package:prompt_chat/cli/user.dart';
@@ -529,5 +530,37 @@ class ChatAPI {
         }
       }
     }
+  }
+
+  void sendDm(String recieverusername, String message, String senderusername){
+    User sender = getUser(senderusername);
+    User reciever = getUser(recieverusername);
+    DirectMessage dm = DirectMessage(sender, reciever, message);
+    print(dm);
+    dm.send();
+  }
+
+  Future<List<String>> getRecievedDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.receiver.username == user.username){
+        messages.add("${dm.sender.username} : ${dm.message}");
+      }
+    }
+    return messages;
+  }
+
+  Future<List<String>> getSentDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.sender.username == user.username){
+        messages.add("${dm.receiver.username} : ${dm.message}");
+      }
+    }
+    return messages;
   }
 }

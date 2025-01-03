@@ -15,6 +15,14 @@ class DatabaseIO {
     await reqCollection.insertOne(document.toMap());
     db.close();
   }
+
+  static Future<List<Map<String, dynamic>>> getFromDB(String collectionName) async {
+    var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
+    var db = await connectDB(env['MONGO_URI']!);
+    var reqCollection = await db.collection(collectionName).find().toList();
+    db.close();
+    return reqCollection;
+  }
 }
 
 class UserIO extends DatabaseIO {
