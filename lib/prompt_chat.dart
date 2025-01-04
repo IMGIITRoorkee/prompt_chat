@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
@@ -35,6 +36,10 @@ class ChatAPI {
   Future<void> registerUser(String? username, String? password) async {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
+    }
+    if (!isPasswordValid(password)) {
+     print("Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+    throw WeakPasswordException();
     }
     validUsername(username);
     var newUser = User(username, password, false);
@@ -102,9 +107,6 @@ class ChatAPI {
   Future<void> loginUser(String? username, String? password) async {
     if (password == null || username == null) {
       throw InvalidCredentialsException();
-    }
-    if (!isPasswordValid(password)) {
-      throw WeakPasswordException();
     }
     if (someoneLoggedIn) {
       throw Exception("Please logout of the current session to login again");
