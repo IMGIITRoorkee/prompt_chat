@@ -287,7 +287,6 @@ class Server {
     var user = getMember(username);
 
     List<Role> senderRoles = extractRoles(user);
-    print(senderRoles);
     return senderRoles.any((role) => role.accessLevel.index == accessNo);
   }
 
