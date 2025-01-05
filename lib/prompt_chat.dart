@@ -39,8 +39,8 @@ class ChatAPI {
     validUsername(username);
     var newUser = User(username, password, false);
 
-    users.add(newUser);
     await newUser.register();
+    users.add(newUser);
   }
 
   void validUsername(String username) {
