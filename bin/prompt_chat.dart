@@ -25,15 +25,17 @@ void runApp(ChatAPI api) async {
       switch (ccs[0]) {
         case "register":
           {
-            await api.registerUser(ccs[1], ccs[2]);
+            await api.registerUser(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
             print("Registration successful!");
             break;
           }
         case "login":
           {
-            await api.loginUser(ccs[1], ccs[2]);
-            currUsername = ccs[1];
-            print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
+            await api.loginUser(ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
+            currUsername = ccs.elementAtOrNull(1);
+            print(
+                "\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
             break;
           }
         case "logout":
@@ -45,14 +47,16 @@ void runApp(ChatAPI api) async {
           }
         case "update-username":
           {
-            await api.updateUsername(ccs[1], ccs[2]);
-            currUsername = ccs[1];
+            await api.updateUsername(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
+            currUsername = ccs.elementAtOrNull(1);
             print("Successfully updated username!");
             break;
           }
         case "update-password":
           {
-            await api.updatePassword(ccs[1], ccs[2]);
+            await api.updatePassword(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
             print("Successfully updated password!");
             break;
           }
@@ -62,26 +66,34 @@ void runApp(ChatAPI api) async {
           }
         case "create-server":
           {
-            await api.createServer(ccs[1], currUsername, ccs[2]);
+            await api.createServer(
+                ccs.elementAtOrNull(1), currUsername, ccs.elementAtOrNull(2));
             print("Created server succesfully");
             break;
           }
         case "add-member":
           {
-            await api.addMemberToServer(ccs[1], ccs[2], currUsername);
+            await api.addMemberToServer(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2), currUsername);
             print("Added member successfully");
             break;
           }
         case "add-category":
           {
-            await api.addCategoryToServer(ccs[1], ccs[2], currUsername);
+            await api.addCategoryToServer(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2), currUsername);
             print("Added category successfully");
             break;
           }
         case "add-channel":
           {
             await api.addChannelToServer(
-                ccs[1], ccs[2], ccs[3], ccs[4], ccs[5], currUsername);
+                ccs.elementAtOrNull(1),
+                ccs.elementAtOrNull(2),
+                ccs.elementAtOrNull(3),
+                ccs.elementAtOrNull(4),
+                ccs.elementAtOrNull(5),
+                currUsername);
             print("Added channel successfully");
             break;
           }
@@ -89,14 +101,14 @@ void runApp(ChatAPI api) async {
           {
             print("Enter the text message to be sent");
             var message = stdin.readLineSync();
-            await api.sendMessageInServer(
-                ccs[1], currUsername, ccs[2], message);
+            await api.sendMessageInServer(ccs.elementAtOrNull(1), currUsername,
+                ccs.elementAtOrNull(2), message);
             print('Message sent succesfully');
             break;
           }
         case "display-messages":
           {
-            api.displayMessages(ccs[1]);
+            api.displayMessages(ccs.elementAtOrNull(1));
             break;
           }
         case "display-users":
@@ -106,12 +118,12 @@ void runApp(ChatAPI api) async {
           }
         case "search-users":
           {
-            api.searchUsers(ccs[1]);
+            api.searchUsers(ccs.elementAtOrNull(1));
             break;
           }
         case "search-servers":
           {
-            api.searchServers(ccs[1]);
+            api.searchServers(ccs.elementAtOrNull(1));
             break;
           }
         case "display-channels":
@@ -126,32 +138,36 @@ void runApp(ChatAPI api) async {
           }
         case "create-role":
           {
-            await api.createRole(ccs[1], ccs[2], ccs[3], currUsername);
+            await api.createRole(ccs.elementAtOrNull(1), ccs.elementAtOrNull(2),
+                ccs.elementAtOrNull(3), currUsername);
             print("Role created successfully");
             break;
           }
         case "assign-role":
           {
-            await api.addRoleToUser(ccs[1], ccs[2], ccs[3], currUsername);
+            await api.addRoleToUser(ccs.elementAtOrNull(1),
+                ccs.elementAtOrNull(2), ccs.elementAtOrNull(3), currUsername);
             print("Role assigned successfully");
             break;
           }
         case "channel-to-cat":
           {
-            await api.addChannelToCategory(
-                ccs[1], ccs[2], ccs[3], currUsername);
+            await api.addChannelToCategory(ccs.elementAtOrNull(1),
+                ccs.elementAtOrNull(2), ccs.elementAtOrNull(3), currUsername);
             print("Channel added to category");
             break;
           }
         case "change-perm":
           {
-            await api.changePermission(ccs[1], ccs[2], ccs[3], currUsername);
+            await api.changePermission(ccs.elementAtOrNull(1),
+                ccs.elementAtOrNull(2), ccs.elementAtOrNull(3), currUsername);
             print("Permission changed successfully.");
             break;
           }
         case "change-ownership":
           {
-            await api.changeOwnership(ccs[1], currUsername, ccs[2]);
+            await api.changeOwnership(
+                ccs.elementAtOrNull(1), currUsername, ccs.elementAtOrNull(2));
             break;
           }
         case "leave-server":
@@ -163,7 +179,7 @@ void runApp(ChatAPI api) async {
             }
             confirm = confirm.toLowerCase();
             if (confirm == "y" || confirm == "yes") {
-              await api.leaveServer(ccs[1], currUsername);
+              await api.leaveServer(ccs.elementAtOrNull(1), currUsername);
               print("Member deleted");
             }
             break;
@@ -177,14 +193,15 @@ void runApp(ChatAPI api) async {
             }
             confirm = confirm.toLowerCase();
             if (confirm == "y" || confirm == "yes") {
-              await api.kickoutFromServer(ccs[1], ccs[2], currUsername);
+              await api.kickoutFromServer(
+                  ccs.elementAtOrNull(1), ccs.elementAtOrNull(2), currUsername);
               print("Member kicked out");
             }
             break;
           }
         case 'join-server':
           {
-            await api.joinServer(ccs[1], currUsername);
+            await api.joinServer(ccs.elementAtOrNull(1), currUsername);
             print("Server joined successfully.");
           }
         case 'clear-screen':
