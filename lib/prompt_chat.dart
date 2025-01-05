@@ -1,5 +1,6 @@
 import 'dart:core';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:intl/intl.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
@@ -39,8 +40,8 @@ class ChatAPI {
     validUsername(username);
     var newUser = User(username, password, false);
 
-    users.add(newUser);
     await newUser.register();
+    users.add(newUser);
   }
 
   void validUsername(String username) {
@@ -59,7 +60,10 @@ class ChatAPI {
     for (Channel channel in reqServer.channels) {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
-        print("${message.sender.username} : ${message.content}");
+        String formattedDate =
+            DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+        print(
+            "${message.sender.username} ($formattedDate): ${message.content}");
       }
     }
   }
