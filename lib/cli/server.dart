@@ -260,7 +260,6 @@ class Server {
       throw Exception("User is not logged in");
     }
     List<Role> senderRoles = extractRoles(user);
-    print(senderRoles);
     senderRoles.firstWhere((element) => element.accessLevel.index == accessNo,
         orElse: () =>
             throw Exception("You are not authorised for this action"));
