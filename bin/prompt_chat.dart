@@ -33,7 +33,8 @@ void runApp(ChatAPI api) async {
           {
             await api.loginUser(ccs[1], ccs[2]);
             currUsername = ccs[1];
-            print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
+            print(
+                "\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
             break;
           }
         case "logout":
@@ -62,7 +63,8 @@ void runApp(ChatAPI api) async {
           }
         case "create-server":
           {
-            await api.createServer(ccs[1], currUsername, ccs[2]);
+            await api.createServer(
+                ccs[1], currUsername, ccs.elementAtOrNull(2));
             print("Created server succesfully");
             break;
           }
