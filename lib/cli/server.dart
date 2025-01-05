@@ -272,7 +272,6 @@ class Server {
       throw Exception("User is not logged in");
     }
     List<Role> senderRoles = extractRoles(user);
-    print(senderRoles);
     senderRoles.firstWhere((element) {
       for (int a in accessNos) {
         if (element.accessLevel.index == a) {
