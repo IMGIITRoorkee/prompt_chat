@@ -1,5 +1,6 @@
-import 'package:prompt_chat/db/database_crud.dart';
 import 'package:bcrypt/bcrypt.dart';
+
+import 'package:prompt_chat/db/database_crud.dart';
 
 class User {
   late String username;
@@ -30,7 +31,7 @@ class User {
       throw Exception("Error : Incorrect password");
     }
     loggedIn = true;
-    await UserIO.updateDB(User(username, password, true));
+    await UserIO.updateDB(User(username, this.password, true));
   }
 
   Future<void> update(String? username, String? newPass, String oldPass) async {
@@ -52,4 +53,8 @@ class User {
     //abhi ke liye no checks
     await UserIO.updateDB(User(username, password, false));
   }
+
+  @override
+  String toString() =>
+      'User(username: $username, password: $password, loggedIn: $loggedIn)';
 }
