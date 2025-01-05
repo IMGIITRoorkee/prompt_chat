@@ -14,7 +14,7 @@ class Category {
 
   static Category fromMap(Map<String, dynamic> map) {
     late List<Channel> unmappedChannels;
-    if(map['channels'] == null) {
+    if (map['channels'] == null) {
       unmappedChannels = [];
     }
     unmappedChannels = (map['channels'] as List)
@@ -23,4 +23,12 @@ class Category {
     return Category(
         categoryName: map['categoryName'], channels: unmappedChannels);
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is Category && other.categoryName == categoryName;
+  }
+
+  @override
+  int get hashCode => categoryName.hashCode;
 }
