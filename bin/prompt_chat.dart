@@ -11,7 +11,7 @@ Future<String?> getUserInputWithTimeout() async {
   StreamSubscription? subscription;
 
   // Set timeout
-  Timer timeout = Timer(Duration(minutes: 10), () {
+  Timer timeout = Timer(Duration(seconds: 5), () {
     if (!completer.isCompleted) {
       completer.complete(null);
       subscription?.cancel();
@@ -212,6 +212,9 @@ void runApp(ChatAPI api) async {
             print("Please enter a valid command.");
           }
       }
+    } on TimedoutLogoutException catch (e) {
+      print("User has been logged out due to inactivity.");
+      break loop;
     } on Exception catch (e) {
       print("$e");
     }
