@@ -1,7 +1,12 @@
 import 'dart:core';
+import 'dart:io';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:intl/intl.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
+import 'package:prompt_chat/cli/direct_message.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/message.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/server.dart';
@@ -15,6 +20,7 @@ import 'package:prompt_chat/enum/server_type.dart';
 class ChatAPI {
   List<User> users = [];
   List<Server> servers = [];
+  List<InviteCode> inviteCodes = [];
   bool someoneLoggedIn = false;
 
   // Populate users & servers array from db
@@ -22,6 +28,7 @@ class ChatAPI {
     // users.forEach((element) {print(element.username);});
     users = await UserIO.getAllUsers();
     servers = await ServerIO.getAllServers();
+    inviteCodes = await InviteCodeIO.getAllInviteCodes();
   }
 
   // Check if a given username exists
@@ -35,13 +42,40 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
-    if (await isUsernameExists(username)) {
-      throw Exception("User already exists");
+    if (!isPasswordValid(password)) {
+     print("Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+    throw WeakPasswordException();
     }
+    validUsername(username);
     var newUser = User(username, password, false);
 
-    users.add(newUser);
     await newUser.register();
+    users.add(newUser);
+  }
+
+  Future<void> deleteUser(String? username) async {
+    if (username == null) {
+      throw Exception("Please enter a valid command");
+    }
+
+    var reqUser = getUser(username);
+    users.remove(reqUser);
+
+    for (var server in servers) {
+      server.roles.forEach((role) => role.holders.remove(reqUser));
+      server.channels.forEach((channel) {
+        channel.messages.removeWhere((mssg) => mssg.sender == reqUser);
+      });
+      server.members.remove(reqUser);
+    }
+    await reqUser.delete();
+  }
+
+  void validUsername(String username) {
+    var usernames = users.map((e) => e.username).toList();
+    if (usernames.contains(username)) {
+      throw Exception("User already exists");
+    }
   }
 
   // Display all the messages in a given server
@@ -53,7 +87,44 @@ class ChatAPI {
     for (Channel channel in reqServer.channels) {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
-        print("${message.sender.username} : ${message.content}");
+        String formattedDate =
+            DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+        print(
+            "${message.sender.username} ($formattedDate): ${message.content}");
+      }
+    }
+  }
+
+  // Display all the servers, categories and channels associated with the user.
+  void displayUserServers() {
+    // Create indentation using '\t' repeated 'level' times
+    void printIndented(String text, int level) {
+      print('${'\t' * level}- $text');
+    }
+
+    var username = getCurrentLoggedIn();
+    if (username == null) throw Exception("You must be logged in!");
+    List<Server> userServers =
+        servers.where((element) => element.isMember(username)).toList();
+
+    for (var server in userServers) {
+      print(server.serverName);
+
+      for (var category in server.categories) {
+        printIndented("Category: ${category.categoryName}", 1);
+
+        List<Channel> channels = [];
+        if (server.isAccessAllowed(username, 2)) {
+          channels = category.channels;
+        } else if (server.isAccessAllowed(username, 1)) {
+          channels = category.channels
+              .where((element) => element.permission != Permission.owner)
+              .toList();
+        }
+
+        for (var channel in channels) {
+          printIndented("Channel: ${channel.channelName}", 2);
+        }
       }
     }
   }
@@ -62,9 +133,6 @@ class ChatAPI {
   Future<void> loginUser(String? username, String? password) async {
     if (password == null || username == null) {
       throw InvalidCredentialsException();
-    }
-    if (!isPasswordValid(password)) {
-      throw WeakPasswordException();
     }
     if (someoneLoggedIn) {
       throw Exception("Please logout of the current session to login again");
@@ -93,6 +161,33 @@ class ChatAPI {
     reqUser.loggedIn = false;
     someoneLoggedIn = false;
     await reqUser.logout();
+  }
+
+  Future<void> updateUsername(String? username, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (username == null) {
+      throw Exception("Valid username must be provided");
+    }
+    validUsername(username);
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(username, null, oldPass);
+  }
+
+  Future<void> updatePassword(String? newPass, String? oldPass) async {
+    if (oldPass == null) {
+      throw Exception("Current password must be provided!");
+    } else if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in to update info!");
+    } else if (newPass == null) {
+      throw Exception("Valid username must be provided");
+    }
+
+    var user = getUser(getCurrentLoggedIn()!);
+    await user.update(null, newPass, oldPass);
   }
 
   // Get user object from username
@@ -167,7 +262,7 @@ class ChatAPI {
     }
     var reqUser = getUser(userName);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(ownerName, 2);
+    reqServer.checkAccessLevels(ownerName, [1, 2]);
     await reqServer.addMember(reqUser);
   }
 
@@ -207,7 +302,7 @@ class ChatAPI {
           "Please enter the valid credentials, or login to continue.");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
         .addCategory(Category(categoryName: categoryName, channels: []));
   }
@@ -233,7 +328,7 @@ class ChatAPI {
     var chanType = getChannelType(channelType);
     var perm = getPermission(channelPerm);
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(userName, 2);
+    reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer.addChannel(
         Channel(
             channelName: channelName,
@@ -327,7 +422,7 @@ class ChatAPI {
       throw Exception("Enter a valid command");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     if (!(reqServer.isMember(memberName))) {
       throw Exception("User is not a member of the server");
     }
@@ -349,7 +444,8 @@ class ChatAPI {
       throw Exception("Please enter a valid command, or login to continue");
     }
     var reqServer = getServer(serverName);
-    reqServer.checkAccessLevel(callerName, 2);
+
+    reqServer.checkAccessLevels(callerName, [1, 2]);
     await reqServer.assignChannel(channelName, categoryName);
   }
 
@@ -419,6 +515,38 @@ class ChatAPI {
     await reqServer.removeMember(callerName);
   }
 
+  void searchServers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<Server>(
+      query: term,
+      choices: servers,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.serverName);
+      },
+    );
+  }
+
+  void searchUsers(String? term) {
+    if (term == null) {
+      throw Exception("Valid search term must be provided.");
+    }
+    extractTop<User>(
+      query: term,
+      choices: users,
+      limit: 5,
+      cutoff: 50,
+    ).forEach(
+      (element) {
+        print(element.choice.username);
+      },
+    );
+  }
+
   // Display all the channels in every category in every server
   void displayChannels() {
     for (Server server in servers) {
@@ -429,5 +557,71 @@ class ChatAPI {
         }
       }
     }
+  }
+
+  // create a new invite code
+  Future<String> createInviteCode(String servername, String username) async {
+    var reqServer = getServer(servername);
+    var reqUser = getUser(username);
+    reqServer.checkAccessLevels(username, [1, 2]);
+    var inviteCode = InviteCode(reqUser, "",reqServer);
+    for(var invitecode in reqServer.inviteCodes ){
+      if(invitecode.code == inviteCode.code){
+        return createInviteCode(servername, username);
+      }
+      else if (invitecode.inviter == reqUser){
+        return invitecode.code;
+      }
+    }
+    reqServer.inviteCodes.add(inviteCode);
+    await DatabaseIO.addToDB(inviteCode,"invitecodes");
+    inviteCodes.add(inviteCode);
+    return inviteCode.code;
+
+  }
+
+  // join server using invite code
+  Future<void> joinServerWithCode(String inviteCode, String username) async {
+    var invite = inviteCodes.firstWhere((element) => element.code == inviteCode,
+        orElse: () => throw Exception("Invalid invite code"));
+    var reqUser = getUser(username);
+    var reqServer = invite.server;
+    if (reqServer.isMember(reqUser.username)) {
+      throw Exception("The user is already a member of the server");
+    }
+    await reqServer.addMember(reqUser);
+    invite.invitedUsers.add(reqUser);
+  }
+
+  void sendDm(String recieverusername, String message, String senderusername){
+    User sender = getUser(senderusername);
+    User reciever = getUser(recieverusername);
+    DirectMessage dm = DirectMessage(sender, reciever, message);
+    print(dm);
+    dm.send();
+  }
+
+  Future<List<String>> getRecievedDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.receiver.username == user.username){
+        messages.add("${dm.sender.username} : ${dm.message}");
+      }
+    }
+    return messages;
+  }
+
+  Future<List<String>> getSentDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.sender.username == user.username){
+        messages.add("${dm.receiver.username} : ${dm.message}");
+      }
+    }
+    return messages;
   }
 }

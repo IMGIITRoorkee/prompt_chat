@@ -30,12 +30,16 @@ class User {
       throw Exception("Error : Incorrect password");
     }
     loggedIn = true;
+    await UserIO.updateDB(User(username, password, true));
+  }
+
+  Future<void> update(String? username, String? newPass, String oldPass) async {
+    bool authed = BCrypt.checkpw(oldPass, this.password);
+    if (!(authed)) {
+      throw Exception("Error : Incorrect password");
+    }
     await UserIO.updateDB(
-        User(
-            username,
-            password,
-            true
-            ));
+        User(username ?? this.username, newPass ?? password, true));
   }
 
   Future<void> register() async {
@@ -44,13 +48,12 @@ class User {
     await DatabaseIO.addToDB(this, "users");
   }
 
+  Future<void> delete() async {
+    await DatabaseIO.deleteDB(username);
+  }
+
   Future<void> logout() async {
     //abhi ke liye no checks
-    await UserIO.updateDB(
-        User(
-            username,
-            password,
-            false
-            ));
+    await UserIO.updateDB(User(username, password, false));
   }
 }
