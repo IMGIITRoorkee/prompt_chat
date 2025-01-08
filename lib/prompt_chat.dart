@@ -1,7 +1,10 @@
 import 'dart:core';
+import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:intl/intl.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
+import 'package:prompt_chat/cli/direct_message.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
 import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/message.dart';
@@ -39,11 +42,33 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
+    if (!isPasswordValid(password)) {
+     print("Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+    throw WeakPasswordException();
+    }
     validUsername(username);
     var newUser = User(username, password, false);
 
-    users.add(newUser);
     await newUser.register();
+    users.add(newUser);
+  }
+
+  Future<void> deleteUser(String? username) async {
+    if (username == null) {
+      throw Exception("Please enter a valid command");
+    }
+
+    var reqUser = getUser(username);
+    users.remove(reqUser);
+
+    for (var server in servers) {
+      server.roles.forEach((role) => role.holders.remove(reqUser));
+      server.channels.forEach((channel) {
+        channel.messages.removeWhere((mssg) => mssg.sender == reqUser);
+      });
+      server.members.remove(reqUser);
+    }
+    await reqUser.delete();
   }
 
   void validUsername(String username) {
@@ -62,7 +87,10 @@ class ChatAPI {
     for (Channel channel in reqServer.channels) {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
-        print("${message.sender.username} : ${message.content}");
+        String formattedDate =
+            DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+        print(
+            "${message.sender.username} ($formattedDate): ${message.content}");
       }
     }
   }
@@ -105,9 +133,6 @@ class ChatAPI {
   Future<void> loginUser(String? username, String? password) async {
     if (password == null || username == null) {
       throw InvalidCredentialsException();
-    }
-    if (!isPasswordValid(password)) {
-      throw WeakPasswordException();
     }
     if (someoneLoggedIn) {
       throw Exception("Please logout of the current session to login again");
@@ -566,5 +591,37 @@ class ChatAPI {
     }
     await reqServer.addMember(reqUser);
     invite.invitedUsers.add(reqUser);
+  }
+
+  void sendDm(String recieverusername, String message, String senderusername){
+    User sender = getUser(senderusername);
+    User reciever = getUser(recieverusername);
+    DirectMessage dm = DirectMessage(sender, reciever, message);
+    print(dm);
+    dm.send();
+  }
+
+  Future<List<String>> getRecievedDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.receiver.username == user.username){
+        messages.add("${dm.sender.username} : ${dm.message}");
+      }
+    }
+    return messages;
+  }
+
+  Future<List<String>> getSentDms(String username) async{
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for(DirectMessage dm in dms){
+      if(dm.sender.username == user.username){
+        messages.add("${dm.receiver.username} : ${dm.message}");
+      }
+    }
+    return messages;
   }
 }

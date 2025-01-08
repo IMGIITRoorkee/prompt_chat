@@ -219,6 +219,55 @@ void runApp(ChatAPI api) async {
           {
             print(helpText);
           }
+        case "send-dm":
+          {
+            if (currUsername == null) {
+              print("Please login to send a direct message.");
+              break;
+            }
+          print("Enter the message:");
+          var message = stdin.readLineSync();
+          if (message == null) {
+            print("Please enter a message.");
+            break;
+          }
+          api.sendDm(ccs[1], message,currUsername);
+        }
+        case "display-dms":
+          {
+            if (currUsername == null) {
+              print("Please login to view direct messages.");
+              break;
+            }
+            List<String> messages = await api.getRecievedDms(currUsername);
+            for (var element in messages) {
+              print(element);
+            }
+            break;
+          }
+        case "display-sent-dms":
+        {
+          if (currUsername == null) {
+            print("Please login to view direct messages.");
+            break;
+          }
+          List<String> messages = await api.getSentDms(currUsername);
+          for (var element in messages) {
+            print(element);
+          }
+          break;
+        }
+        case "delete-user":
+          {
+            if (currUsername == null) {
+              print("Please login first.");
+              break;
+            }
+            await api.logoutUser(currUsername);
+            currUsername = null;
+            api.deleteUser(currUsername);
+            print("User deleted successfully.");
+          }
         default:
           {
             print("Please enter a valid command.");
