@@ -10,14 +10,33 @@ void main(List<String> arguments) async{
   Future.wait([api.populateArrays()]).then((value) => {runApp(api)});
   //rest of the application cannot start until above function completes.
 }
+
 final logger = LogService();
 
+void clearCLI() {
+  print("\x1B[2J\x1B[H"); // Clear the terminal
+}
+
+void printWelcomeText() {
+  const String reset = '\x1B[0m'; // Reset text style
+  const String cyan = '\x1B[96m'; // Bright cyan
+  const String yellow = '\x1B[93m'; // Bright yellow
+  const String green = '\x1B[92m'; // Bright green
+
+
+  print(
+      '$cyan Welcome to $yellow prompt_chat! $reset'); // Highlight app name in yellow
+  print(
+      '$green Read the documentation to get started on using the interface.$reset');
+  print(
+      '$cyan Type "exit" to close the application.$reset');
+}
 void runApp(ChatAPI api) async {
   String? currUsername;
   String? currentCommand;
   currUsername = api.getCurrentLoggedIn();
-  print(
-      "Welcome to prompt_chat! Read the documentation to get started on using the interface. Type \"exit\" to close the application.Type \"help\" for a list of commands.");
+clearCLI();
+  printWelcomeText();
   loop:
   while (true) {
     try {
@@ -207,6 +226,11 @@ void runApp(ChatAPI api) async {
             logger.info("Joined server $ccs[1]", currUsername as String);
             print("Server joined successfully.");
           }
+        case 'clear-screen':
+          {
+            print("\x1B[2J\x1B[H");
+            break;
+          }
         case "exit":
           {
             print("See you soon!");
@@ -219,6 +243,55 @@ void runApp(ChatAPI api) async {
         case "help":
           {
             print(helpText);
+          }
+        case "send-dm":
+          {
+            if (currUsername == null) {
+              print("Please login to send a direct message.");
+              break;
+            }
+          print("Enter the message:");
+          var message = stdin.readLineSync();
+          if (message == null) {
+            print("Please enter a message.");
+            break;
+          }
+          api.sendDm(ccs[1], message,currUsername);
+        }
+        case "display-dms":
+          {
+            if (currUsername == null) {
+              print("Please login to view direct messages.");
+              break;
+            }
+            List<String> messages = await api.getRecievedDms(currUsername);
+            for (var element in messages) {
+              print(element);
+            }
+            break;
+          }
+        case "display-sent-dms":
+        {
+          if (currUsername == null) {
+            print("Please login to view direct messages.");
+            break;
+          }
+          List<String> messages = await api.getSentDms(currUsername);
+          for (var element in messages) {
+            print(element);
+          }
+          break;
+        }
+        case "delete-user":
+          {
+            if (currUsername == null) {
+              print("Please login first.");
+              break;
+            }
+            await api.logoutUser(currUsername);
+            currUsername = null;
+            api.deleteUser(currUsername);
+            print("User deleted successfully.");
           }
         default:
           {

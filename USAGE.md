@@ -50,3 +50,11 @@ Use `change-ownership server_name new_owner` to give your owner rights to `new_o
 Use `leave-server server_name` to leave a server. Note that you must relinquish your ownership rights using `change-ownership` first before leaving a server if you are its owner.
 ### Kickout users from server
 Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner/moderator for this. 
+### Send a direct message
+Use `send-dm user_name` to send a direct message to a user. Then you will be asked to enter the message you want to send.
+### See your direct messages
+Use `display-dms` to see your direct messages.
+### See your sent direct messages
+Use `display-sent-dms` to see your sent direct messages.
+### Delete User
+User `delete-user` to delete the current user permanently from everywhere.
