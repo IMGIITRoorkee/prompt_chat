@@ -1,15 +1,56 @@
-import 'package:prompt_chat/cli/logsysten/logger_service.dart';
+import 'package:prompt_chat/cli/exceptions/timeout.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:prompt_chat/utils/get_flag.dart';
+
+// Create a broadcast stream that can be listened to multiple times
+final stdinBroadcast = stdin.asBroadcastStream();
+
+Future<String?> getUserInputWithTimeout() async {
+  Completer<String?> completer = Completer<String?>();
+  StreamSubscription? subscription;
+
+  // Set timeout
+  Timer timeout = Timer(Duration(minutes: 10), () {
+    if (!completer.isCompleted) {
+      completer.complete(null);
+      subscription?.cancel();
+    }
+  });
+
+  // Listen to the broadcast stream
+  subscription = stdinBroadcast.listen(
+    (List<int> event) {
+      if (!completer.isCompleted) {
+        String input = String.fromCharCodes(event).trim();
+        completer.complete(input);
+        timeout.cancel();
+      }
+    },
+    onError: (error) {
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+        timeout.cancel();
+      }
+    },
+  );
+
+  try {
+    return await completer.future;
+  } finally {
+    subscription.cancel();
+    timeout.cancel();
+  }
+}
+
 
 void main(List<String> arguments) async{
   final logger = LogService();
   await logger.initLogFile(); // Initialize log file
   ChatAPI api = ChatAPI();
   Future.wait([api.populateArrays()]).then((value) => {runApp(api)});
-  //rest of the application cannot start until above function completes.
 }
 
 final logger = LogService();
@@ -41,9 +82,11 @@ clearCLI();
   loop:
   while (true) {
     try {
-      currentCommand = stdin.readLineSync();
+      currentCommand = await getUserInputWithTimeout();
+
       if (currentCommand == null) {
-        throw Exception("Please enter a command");
+        api.logoutUser(currUsername);
+        throw TimedoutLogoutException();
       }
       var ccs = currentCommand.split(" ");
       switch (ccs[0]) {
@@ -363,6 +406,9 @@ clearCLI();
             print("Please enter a valid command.");
           }
       }
+    } on TimedoutLogoutException catch (e) {
+      print("User has been logged out due to inactivity.");
+      break loop;
     } on Exception catch (e) {
       print("$e");
     }
