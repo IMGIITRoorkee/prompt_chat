@@ -68,3 +68,13 @@ Use `leave-server --server <server_name>` to leave a server. Note that you must 
 
 ### Kickout users from server
 Use `kickout-member --server <server_name> --member <user_name>` to kickout a member from a server. Note that you must be an owner or moderator for this.
+Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner/moderator for this. 
+### Send a direct message
+Use `send-dm user_name` to send a direct message to a user. Then you will be asked to enter the message you want to send.
+### See your direct messages
+Use `display-dms` to see your direct messages.
+### See your sent direct messages
+Use `display-sent-dms` to see your sent direct messages.
+### Delete User
+User `delete-user` to delete the current user permanently from everywhere.
+
