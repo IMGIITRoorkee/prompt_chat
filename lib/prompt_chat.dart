@@ -44,6 +44,24 @@ class ChatAPI {
     users.add(newUser);
   }
 
+  Future<void> deleteUser(String? username) async {
+    if (username == null) {
+      throw Exception("Please enter a valid command");
+    }
+
+    var reqUser = getUser(username);
+    users.remove(reqUser);
+
+    for (var server in servers) {
+      server.roles.forEach((role) => role.holders.remove(reqUser));
+      server.channels.forEach((channel) {
+        channel.messages.removeWhere((mssg) => mssg.sender == reqUser);
+      });
+      server.members.remove(reqUser);
+    }
+    await reqUser.delete();
+  }
+
   void validUsername(String username) {
     var usernames = users.map((e) => e.username).toList();
     if (usernames.contains(username)) {
