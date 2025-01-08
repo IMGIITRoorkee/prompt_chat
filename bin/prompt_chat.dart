@@ -304,6 +304,7 @@ clearCLI();
           {
             print(await logger.getLogs());
             break;
+          }
         case "help":
           {
             print(helpText);
