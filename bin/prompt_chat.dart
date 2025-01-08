@@ -2,6 +2,7 @@ import 'package:prompt_chat/cli/logsysten/logger_service.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
+import 'package:prompt_chat/utils/get_flag.dart';
 
 void main(List<String> arguments) async{
   final logger = LogService();
@@ -48,15 +49,19 @@ clearCLI();
       switch (ccs[0]) {
         case "register":
           {
-            await api.registerUser(ccs[1], ccs[2]);
+            var username = getFlagValue("--username", currentCommand);
+            var password = getFlagValue("--password", currentCommand);
+            await api.registerUser(username, password);
             print("Registration successful!");
             logger.info("User registered", ccs[1]);
             break;
           }
         case "login":
           {
-            await api.loginUser(ccs[1], ccs[2]);
-            currUsername = ccs[1];
+            var username = getFlagValue("--username", currentCommand);
+            var password = getFlagValue("--password", currentCommand);
+            await api.loginUser(username, password);
+            currUsername = username;
             print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
             logger.info("User logged in", ccs[1]);
             break;
@@ -85,49 +90,67 @@ clearCLI();
         case 'current-session':
           {
             print("$currUsername is logged in");
+            break;
           }
         case "create-server":
           {
-            await api.createServer(ccs[1], currUsername, ccs[2]);
-            logger.info("Created new server $ccs[1]", currUsername as String);
-            print("Created server succesfully");
+            var serverName = getFlagValue("--name", currentCommand);
+            var joinPermission =
+                getFlagValue("--permission", currentCommand) ?? "open";
+            await api.createServer(serverName, currUsername, joinPermission);
+            logger.info("Created new server $serverName", currUsername as String);
+            print("Created server successfully");
             break;
           }
         case "add-member":
           {
-            await api.addMemberToServer(ccs[1], ccs[2], currUsername);
-            logger.info("Added member $ccs[2] to server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var memberName = getFlagValue("--member", currentCommand);
+            await api.addMemberToServer(serverName, memberName, currUsername);
+            logger.info("Added member $memberName to server $serverName", currUsername as String);
             print("Added member successfully");
             break;
           }
         case "add-category":
           {
-            await api.addCategoryToServer(ccs[1], ccs[2], currUsername);
-            logger.info("Added category $ccs[2] to server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var categoryName = getFlagValue("--category", currentCommand);
+            await api.addCategoryToServer(
+                serverName, categoryName, currUsername);
+            logger.info("Added category $categoryName to server $serverName", currUsername as String);
             print("Added category successfully");
             break;
           }
         case "add-channel":
           {
-            await api.addChannelToServer(
-                ccs[1], ccs[2], ccs[3], ccs[4], ccs[5], currUsername);
-            logger.info("Added channel $ccs[2] to server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var channelName = getFlagValue("--channel", currentCommand);
+            var channelPerms =
+                getFlagValue("--permissions", currentCommand) ?? "member";
+            var channelType = getFlagValue("--type", currentCommand) ?? "text";
+            var parentCategory = getFlagValue("--category", currentCommand);
+            await api.addChannelToServer(serverName, channelName, channelPerms,
+                channelType, parentCategory, currUsername);
+            logger.info("Added channel $channelName to server $serverName", currUsername as String);
             print("Added channel successfully");
             break;
           }
         case "send-msg":
           {
+            var serverName = getFlagValue("--server", currentCommand);
+            var channelName = getFlagValue("--channel", currentCommand);
             print("Enter the text message to be sent");
             var message = stdin.readLineSync();
             await api.sendMessageInServer(
-                ccs[1], currUsername, ccs[2], message);
-            logger.info("Sent message in server '$ccs[1]' channel '$ccs[2]'", currUsername as String);
-            print('Message sent succesfully');
+                serverName, currUsername, channelName, message);
+            logger.info("Sent message in server '$serverName' channel '$channelName'", currUsername as String);
+            print('Message sent successfully');
             break;
           }
         case "display-messages":
           {
-            api.displayMessages(ccs[1]);
+            var serverName = getFlagValue("--server", currentCommand);
+            api.displayMessages(serverName);
             break;
           }
         case "display-users":
@@ -157,41 +180,60 @@ clearCLI();
           }
         case "create-role":
           {
-            await api.createRole(ccs[1], ccs[2], ccs[3], currUsername);
-            logger.info("Created role $ccs[2] in server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var roleName = getFlagValue("--role", currentCommand);
+            var permission =
+                getFlagValue("--permission", currentCommand) ?? "member";
+            await api.createRole(
+                serverName, roleName, permission, currUsername);
+            logger.info("Created role $roleName in server $serverName", currUsername as String);
             print("Role created successfully");
             break;
           }
         case "assign-role":
           {
-            await api.addRoleToUser(ccs[1], ccs[2], ccs[3], currUsername);
-            logger.info("Assigned role $ccs[2] to user $ccs[3] in server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var roleName = getFlagValue("--role", currentCommand);
+            var memberName = getFlagValue("--member", currentCommand);
+            await api.addRoleToUser(
+                serverName, roleName, memberName, currUsername);
+            logger.info("Assigned role $roleName to user $memberName in server $serverName", currUsername as String);
             print("Role assigned successfully");
             break;
           }
         case "channel-to-cat":
           {
+            var serverName = getFlagValue("--server", currentCommand);
+            var channelName = getFlagValue("--channel", currentCommand);
+            var categoryName = getFlagValue("--category", currentCommand);
             await api.addChannelToCategory(
-                ccs[1], ccs[2], ccs[3], currUsername);
-            logger.info("Added channel $ccs[3] to category $ccs[2]", currUsername as String);
+                serverName, channelName, categoryName, currUsername);
+             logger.info("Added channel $channelName to category $categoryName", currUsername as String);
             print("Channel added to category");
             break;
           }
         case "change-perm":
           {
-            await api.changePermission(ccs[1], ccs[2], ccs[3], currUsername);
-            logger.info("Changed permission $ccs[3] in server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var channelName = getFlagValue("--channel", currentCommand);
+            var newPerm = getFlagValue("--permission", currentCommand);
+            await api.changePermission(
+                serverName, channelName, newPerm, currUsername);
+            logger.info("Changed permission $newPerm in server $serverName", currUsername as String);
             print("Permission changed successfully.");
             break;
           }
         case "change-ownership":
           {
-            await api.changeOwnership(ccs[1], currUsername, ccs[2]);
-            logger.info("Changed ownership in server $ccs[1] to $ccs[2]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            var newOwner = getFlagValue("--owner", currentCommand);
+            await api.changeOwnership(serverName, currUsername, newOwner);
+            logger.info("Changed ownership in server $serverName to $newOwner", currUsername as String);
             break;
           }
         case "leave-server":
           {
+            var serverName = getFlagValue("--server", currentCommand);
             print("Are you sure you want to proceed? (y/n)");
             var confirm = stdin.readLineSync();
             if (confirm == null) {
@@ -199,7 +241,7 @@ clearCLI();
             }
             confirm = confirm.toLowerCase();
             if (confirm == "y" || confirm == "yes") {
-              await api.leaveServer(ccs[1], currUsername);
+              await api.leaveServer(serverName, currUsername);
               print("Member deleted");
             logger.info("Left server $ccs[1]", currUsername as String);
             }
@@ -207,6 +249,8 @@ clearCLI();
           }
         case "kickout-member":
           {
+            var serverName = getFlagValue("--server", currentCommand);
+            var memberName = getFlagValue("--member", currentCommand);
             print("Are you sure you want to proceed? (y/n)");
             var confirm = stdin.readLineSync();
             if (confirm == null) {
@@ -214,18 +258,38 @@ clearCLI();
             }
             confirm = confirm.toLowerCase();
             if (confirm == "y" || confirm == "yes") {
-              await api.kickoutFromServer(ccs[1], ccs[2], currUsername);
-            logger.info("Kicked out member $ccs[2] from server $ccs[1]", currUsername as String);
+              await api.kickoutFromServer(serverName, memberName, currUsername);
+              logger.info("Kicked out member $memberName from server $serverName", currUsername as String);
               print("Member kicked out");
             }
             break;
           }
         case 'join-server':
           {
-            await api.joinServer(ccs[1], currUsername);
-            logger.info("Joined server $ccs[1]", currUsername as String);
+            var serverName = getFlagValue("--server", currentCommand);
+            await api.joinServer(serverName, currUsername);
+            logger.info("Joined server $serverName", currUsername as String);
             print("Server joined successfully.");
+            break;
           }
+        case "create-invite-code":
+        {
+          if (currUsername == null) {
+            throw Exception("Please login to create an invite code.");
+          }
+          var code = await api.createInviteCode(ccs[1], currUsername);
+          print("Invite code created successfully. \n Use code: $code");
+          break;
+        }
+        case"join-server-with-code":
+        {
+          if (currUsername == null) {
+            throw Exception("Please login to create an invite code.");
+          }
+          await api.joinServerWithCode(ccs[1], currUsername);
+          print("Server joined successfully.");
+          break;
+        }
         case 'clear-screen':
           {
             print("\x1B[2J\x1B[H");

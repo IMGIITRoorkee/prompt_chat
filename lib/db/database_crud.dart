@@ -1,4 +1,5 @@
 import 'package:dotenv/dotenv.dart';
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/server.dart';
 import 'package:prompt_chat/db/connect.dart';
 import 'package:prompt_chat/cli/user.dart';
@@ -70,6 +71,30 @@ class ServerIO extends DatabaseIO {
     var reqCollection = db.collection("servers");
     await reqCollection
         .replaceOne({'serverName': document.serverName}, document.toMap());
+    db.close();
+  }
+}
+class InviteCodeIO extends DatabaseIO {
+  InviteCodeIO._();
+  static Future<List<InviteCode>> getAllInviteCodes() async {
+    var env = DotEnv(includePlatformEnvironment: true)
+    ..load(['.env']);
+    var db = await connectDB(
+        env['MONGO_URI']!);
+    var reqcodes =
+        await db.collection("invitecodes").find({"finder": "finder"}).toList();
+    db.close();
+    if(reqcodes == [null]) {
+    }
+    return reqcodes.map((e) => InviteCode.fromMap(e)).toList();
+  }
+  static Future<void> updateDB(dynamic document) async {
+    var env = DotEnv(includePlatformEnvironment: true)
+    ..load(['.env']);
+    var db = await connectDB(
+        env['MONGO_URI']!);
+    var reqCollection = db.collection("invitecodes");
+    await reqCollection.replaceOne({'code': document.code}, document.toMap());
     db.close();
   }
 }
