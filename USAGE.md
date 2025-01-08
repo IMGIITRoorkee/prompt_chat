@@ -56,3 +56,5 @@ Use `send-dm user_name` to send a direct message to a user. Then you will be ask
 Use `display-dms` to see your direct messages.
 ### See your sent direct messages
 Use `display-sent-dms` to see your sent direct messages.
+### Delete User
+User `delete-user` to delete the current user permanently from everywhere.
