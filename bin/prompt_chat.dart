@@ -402,6 +402,24 @@ clearCLI();
             api.deleteUser(currUsername);
             print("User deleted successfully.");
           }
+        case "block":
+        {
+          if (currUsername == null) {
+            print("Please login first.");
+            break;
+          }
+          await api.blockUser(currUsername, ccs[1]);
+          print("User blocked successfully.");
+        }
+        case "unblock":
+        {
+          if (currUsername == null) {
+            print("Please login first.");
+            break;
+          }
+          await api.unblockUser(currUsername, ccs[1]);
+          print("User unblocked successfully.");
+        }
         default:
           {
             print("Please enter a valid command.");
