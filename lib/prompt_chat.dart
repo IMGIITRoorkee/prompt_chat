@@ -1,7 +1,7 @@
 import 'dart:core';
 import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/cli/direct_message.dart';
@@ -89,7 +89,7 @@ class ChatAPI {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
         String formattedDate =
-            DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+            intl.DateFormat('dd/MM/yyyy h:mm a').format(message.time);
         print(
             "${message.sender.username} ($formattedDate): ${message.content}");
       }

@@ -1,4 +1,5 @@
 import 'package:prompt_chat/cli/exceptions/timeout.dart';
+import 'package:prompt_chat/cli/logsysten/logger_service.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
@@ -139,7 +140,7 @@ clearCLI();
           {
             var serverName = getFlagValue("--name", currentCommand);
             var joinPermission =
-                getFlagValue("--permission", currentCommand) ?? "open";
+                getFlagValue("--permission", currentCommand);
             await api.createServer(serverName, currUsername, joinPermission);
             logger.info("Created new server $serverName", currUsername as String);
             print("Created server successfully");
@@ -169,8 +170,8 @@ clearCLI();
             var serverName = getFlagValue("--server", currentCommand);
             var channelName = getFlagValue("--channel", currentCommand);
             var channelPerms =
-                getFlagValue("--permissions", currentCommand) ?? "member";
-            var channelType = getFlagValue("--type", currentCommand) ?? "text";
+                getFlagValue("--permissions", currentCommand);
+            var channelType = getFlagValue("--type", currentCommand);
             var parentCategory = getFlagValue("--category", currentCommand);
             await api.addChannelToServer(serverName, channelName, channelPerms,
                 channelType, parentCategory, currUsername);
@@ -226,7 +227,7 @@ clearCLI();
             var serverName = getFlagValue("--server", currentCommand);
             var roleName = getFlagValue("--role", currentCommand);
             var permission =
-                getFlagValue("--permission", currentCommand) ?? "member";
+                getFlagValue("--permission", currentCommand);
             await api.createRole(
                 serverName, roleName, permission, currUsername);
             logger.info("Created role $roleName in server $serverName", currUsername as String);
@@ -406,7 +407,7 @@ clearCLI();
             print("Please enter a valid command.");
           }
       }
-    } on TimedoutLogoutException catch (e) {
+    } on TimedoutLogoutException {
       print("User has been logged out due to inactivity.");
       break loop;
     } on Exception catch (e) {
