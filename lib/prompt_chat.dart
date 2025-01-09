@@ -525,6 +525,7 @@ class ChatAPI {
       choices: servers,
       limit: 5,
       cutoff: 50,
+      getter: (obj) => obj.serverName,
     ).forEach(
       (element) {
         print(element.choice.serverName);
@@ -541,6 +542,7 @@ class ChatAPI {
       choices: users,
       limit: 5,
       cutoff: 50,
+      getter: (obj) => obj.username,
     ).forEach(
       (element) {
         print(element.choice.username);
