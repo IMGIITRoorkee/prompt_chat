@@ -351,8 +351,10 @@ void runApp(ChatAPI api) async {
           }
         case "exit":
           {
+            print("\x1B[2J\x1B[H");
+            print("\x1B[0m");
             print("See you soon!");
-            break loop;
+            exit(0);
           }
         case "display-logs":
           {
