@@ -95,7 +95,7 @@ void runApp(ChatAPI api) async {
             var password = getFlagValue("--password", currentCommand);
             await api.registerUser(username, password);
             print("Registration successful!");
-            logger.info("User registered", ccs[1]);
+            logger.info("User registered", ccs.elementAt(1));
             break;
           }
         case "login":
@@ -106,7 +106,7 @@ void runApp(ChatAPI api) async {
             currUsername = username;
             print(
                 "\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
-            logger.info("User logged in", ccs[1]);
+            logger.info("User logged in", ccs.elementAt(1));
             break;
           }
         case "logout":
@@ -297,7 +297,8 @@ void runApp(ChatAPI api) async {
             if (confirm == "y" || confirm == "yes") {
               await api.leaveServer(serverName, currUsername);
               print("Member deleted");
-              logger.info("Left server $ccs[1]", currUsername as String);
+              logger.info(
+                  "Left server $ccs.elementAt(1)", currUsername as String);
             }
             break;
           }
@@ -333,7 +334,8 @@ void runApp(ChatAPI api) async {
             if (currUsername == null) {
               throw Exception("Please login to create an invite code.");
             }
-            var code = await api.createInviteCode(ccs[1], currUsername);
+            var code =
+                await api.createInviteCode(ccs.elementAt(1), currUsername);
             print("Invite code created successfully. \n Use code: $code");
             break;
           }
@@ -342,7 +344,7 @@ void runApp(ChatAPI api) async {
             if (currUsername == null) {
               throw Exception("Please login to create an invite code.");
             }
-            await api.joinServerWithCode(ccs[1], currUsername);
+            await api.joinServerWithCode(ccs.elementAt(1), currUsername);
             print("Server joined successfully.");
             break;
           }
@@ -377,7 +379,7 @@ void runApp(ChatAPI api) async {
               print("Please enter a message.");
               break;
             }
-            api.sendDm(ccs[1], message, currUsername);
+            api.sendDm(ccs.elementAt(1), message, currUsername);
           }
         case "display-dms":
           {
