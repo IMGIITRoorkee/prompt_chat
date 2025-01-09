@@ -2,9 +2,9 @@ import 'package:prompt_chat/cli/exceptions/timeout.dart';
 import 'package:prompt_chat/cli/logsysten/logger_service.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
+import 'package:prompt_chat/utils/get_flag.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:prompt_chat/utils/get_flag.dart';
 
 // Create a broadcast stream that can be listened to multiple times
 final stdinBroadcast = stdin.asBroadcastStream();
