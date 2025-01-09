@@ -3,6 +3,7 @@ import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
 import 'dart:io';
 import 'dart:async';
+import 'package:prompt_chat/utils/get_flag.dart';
 
 // Create a broadcast stream that can be listened to multiple times
 final stdinBroadcast = stdin.asBroadcastStream();
@@ -44,12 +45,16 @@ Future<String?> getUserInputWithTimeout() async {
   }
 }
 
-import 'package:prompt_chat/utils/get_flag.dart';
 
-void main(List<String> arguments) {
+void main(List<String> arguments) async{
+  final logger = LogService();
+  await logger.initLogFile(); // Initialize log file
   ChatAPI api = ChatAPI();
   Future.wait([api.populateArrays()]).then((value) => {runApp(api)});
 }
+
+final logger = LogService();
+
 void clearCLI() {
   print("\x1B[2J\x1B[H"); // Clear the terminal
 }
@@ -59,6 +64,7 @@ void printWelcomeText() {
   const String cyan = '\x1B[96m'; // Bright cyan
   const String yellow = '\x1B[93m'; // Bright yellow
   const String green = '\x1B[92m'; // Bright green
+
 
   print(
       '$cyan Welcome to $yellow prompt_chat! $reset'); // Highlight app name in yellow
@@ -90,6 +96,7 @@ clearCLI();
             var password = getFlagValue("--password", currentCommand);
             await api.registerUser(username, password);
             print("Registration successful!");
+            logger.info("User registered", ccs[1]);
             break;
           }
         case "login":
@@ -99,11 +106,13 @@ clearCLI();
             await api.loginUser(username, password);
             currUsername = username;
             print("\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
+            logger.info("User logged in", ccs[1]);
             break;
           }
         case "logout":
           {
             await api.logoutUser(currUsername);
+            logger.info("User logged out", currUsername as String);
             currUsername = null;
             print("Successfully logged out, see you again!");
             break;
@@ -132,6 +141,7 @@ clearCLI();
             var joinPermission =
                 getFlagValue("--permission", currentCommand) ?? "open";
             await api.createServer(serverName, currUsername, joinPermission);
+            logger.info("Created new server $serverName", currUsername as String);
             print("Created server successfully");
             break;
           }
@@ -140,6 +150,7 @@ clearCLI();
             var serverName = getFlagValue("--server", currentCommand);
             var memberName = getFlagValue("--member", currentCommand);
             await api.addMemberToServer(serverName, memberName, currUsername);
+            logger.info("Added member $memberName to server $serverName", currUsername as String);
             print("Added member successfully");
             break;
           }
@@ -149,6 +160,7 @@ clearCLI();
             var categoryName = getFlagValue("--category", currentCommand);
             await api.addCategoryToServer(
                 serverName, categoryName, currUsername);
+            logger.info("Added category $categoryName to server $serverName", currUsername as String);
             print("Added category successfully");
             break;
           }
@@ -162,6 +174,7 @@ clearCLI();
             var parentCategory = getFlagValue("--category", currentCommand);
             await api.addChannelToServer(serverName, channelName, channelPerms,
                 channelType, parentCategory, currUsername);
+            logger.info("Added channel $channelName to server $serverName", currUsername as String);
             print("Added channel successfully");
             break;
           }
@@ -173,6 +186,7 @@ clearCLI();
             var message = stdin.readLineSync();
             await api.sendMessageInServer(
                 serverName, currUsername, channelName, message);
+            logger.info("Sent message in server '$serverName' channel '$channelName'", currUsername as String);
             print('Message sent successfully');
             break;
           }
@@ -215,6 +229,7 @@ clearCLI();
                 getFlagValue("--permission", currentCommand) ?? "member";
             await api.createRole(
                 serverName, roleName, permission, currUsername);
+            logger.info("Created role $roleName in server $serverName", currUsername as String);
             print("Role created successfully");
             break;
           }
@@ -225,6 +240,7 @@ clearCLI();
             var memberName = getFlagValue("--member", currentCommand);
             await api.addRoleToUser(
                 serverName, roleName, memberName, currUsername);
+            logger.info("Assigned role $roleName to user $memberName in server $serverName", currUsername as String);
             print("Role assigned successfully");
             break;
           }
@@ -235,6 +251,7 @@ clearCLI();
             var categoryName = getFlagValue("--category", currentCommand);
             await api.addChannelToCategory(
                 serverName, channelName, categoryName, currUsername);
+             logger.info("Added channel $channelName to category $categoryName", currUsername as String);
             print("Channel added to category");
             break;
           }
@@ -245,6 +262,7 @@ clearCLI();
             var newPerm = getFlagValue("--permission", currentCommand);
             await api.changePermission(
                 serverName, channelName, newPerm, currUsername);
+            logger.info("Changed permission $newPerm in server $serverName", currUsername as String);
             print("Permission changed successfully.");
             break;
           }
@@ -253,6 +271,7 @@ clearCLI();
             var serverName = getFlagValue("--server", currentCommand);
             var newOwner = getFlagValue("--owner", currentCommand);
             await api.changeOwnership(serverName, currUsername, newOwner);
+            logger.info("Changed ownership in server $serverName to $newOwner", currUsername as String);
             break;
           }
         case "leave-server":
@@ -267,6 +286,7 @@ clearCLI();
             if (confirm == "y" || confirm == "yes") {
               await api.leaveServer(serverName, currUsername);
               print("Member deleted");
+            logger.info("Left server $ccs[1]", currUsername as String);
             }
             break;
           }
@@ -282,6 +302,7 @@ clearCLI();
             confirm = confirm.toLowerCase();
             if (confirm == "y" || confirm == "yes") {
               await api.kickoutFromServer(serverName, memberName, currUsername);
+              logger.info("Kicked out member $memberName from server $serverName", currUsername as String);
               print("Member kicked out");
             }
             break;
@@ -290,6 +311,7 @@ clearCLI();
           {
             var serverName = getFlagValue("--server", currentCommand);
             await api.joinServer(serverName, currUsername);
+            logger.info("Joined server $serverName", currUsername as String);
             print("Server joined successfully.");
             break;
           }
@@ -320,6 +342,11 @@ clearCLI();
           {
             print("See you soon!");
             break loop;
+          }
+          case "display-logs":
+          {
+            print(await logger.getLogs());
+            break;
           }
         case "help":
           {
