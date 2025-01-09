@@ -22,6 +22,7 @@ class DatabaseIO {
     var reqCollection = await db.collection(collectionName).find().toList();
     db.close();
     return reqCollection;
+  }
 
   static Future<void> deleteDB(dynamic document) async {
     var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
