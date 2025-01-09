@@ -200,6 +200,13 @@ void runApp(ChatAPI api) async {
             api.displayMessages(serverName);
             break;
           }
+        case "export-server":
+          {
+            var serverName = getFlagValue("--server", currentCommand);
+            var outputPath = getFlagValue("--path", currentCommand);
+            await api.exportServer(serverName, outputPath);
+            break;
+          }
         case "display-users":
           {
             api.displayUsers();

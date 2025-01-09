@@ -16,6 +16,7 @@ import 'package:prompt_chat/db/database_crud.dart';
 import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
+import 'package:prompt_chat/utils/file_utils.dart';
 
 class ChatAPI {
   List<User> users = [];
@@ -40,12 +41,12 @@ class ChatAPI {
   // Register a user
   Future<void> registerUser(String? username, String? password) async {
     if (username == null || password == null) {
-      
       throw InvalidCredentialsException();
     }
     if (!isPasswordValid(password)) {
-     print("Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
-    throw WeakPasswordException();
+      print(
+          "Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+      throw WeakPasswordException();
     }
     validUsername(username);
     var newUser = User(username, password, false);
@@ -77,6 +78,25 @@ class ChatAPI {
     if (usernames.contains(username)) {
       throw Exception("User already exists");
     }
+  }
+
+  Future exportServer(String? serverName, String? outputPath) async {
+    String? username = getCurrentLoggedIn();
+    if (serverName == null || outputPath == null) {
+      throw Exception("Please enter a valid command.");
+    }
+    if (!FileUtils.isValidPath(outputPath)) {
+      throw Exception("Please enter a valid output path");
+    }
+    if (username == null) {
+      throw Exception("You must be logged in.");
+    }
+    var server = getServer(serverName);
+    if (!server.isAccessAllowed(username, 2)) {
+      throw Exception("You must be the owner of server to export its data!");
+    }
+    String json = server.toJson();
+    await FileUtils.writeJsonToFile(json, outputPath);
   }
 
   // Display all the messages in a given server
@@ -567,20 +587,18 @@ class ChatAPI {
     var reqServer = getServer(servername);
     var reqUser = getUser(username);
     reqServer.checkAccessLevels(username, [1, 2]);
-    var inviteCode = InviteCode(reqUser, "",reqServer);
-    for(var invitecode in reqServer.inviteCodes ){
-      if(invitecode.code == inviteCode.code){
+    var inviteCode = InviteCode(reqUser, "", reqServer);
+    for (var invitecode in reqServer.inviteCodes) {
+      if (invitecode.code == inviteCode.code) {
         return createInviteCode(servername, username);
-      }
-      else if (invitecode.inviter == reqUser){
+      } else if (invitecode.inviter == reqUser) {
         return invitecode.code;
       }
     }
     reqServer.inviteCodes.add(inviteCode);
-    await DatabaseIO.addToDB(inviteCode,"invitecodes");
+    await DatabaseIO.addToDB(inviteCode, "invitecodes");
     inviteCodes.add(inviteCode);
     return inviteCode.code;
-
   }
 
   // join server using invite code
@@ -596,7 +614,7 @@ class ChatAPI {
     invite.invitedUsers.add(reqUser);
   }
 
-  void sendDm(String recieverusername, String message, String senderusername){
+  void sendDm(String recieverusername, String message, String senderusername) {
     User sender = getUser(senderusername);
     User reciever = getUser(recieverusername);
     DirectMessage dm = DirectMessage(sender, reciever, message);
@@ -604,24 +622,24 @@ class ChatAPI {
     dm.send();
   }
 
-  Future<List<String>> getRecievedDms(String username) async{
+  Future<List<String>> getRecievedDms(String username) async {
     User user = getUser(username);
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
-    for(DirectMessage dm in dms){
-      if(dm.receiver.username == user.username){
+    for (DirectMessage dm in dms) {
+      if (dm.receiver.username == user.username) {
         messages.add("${dm.sender.username} : ${dm.message}");
       }
     }
     return messages;
   }
 
-  Future<List<String>> getSentDms(String username) async{
+  Future<List<String>> getSentDms(String username) async {
     User user = getUser(username);
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
-    for(DirectMessage dm in dms){
-      if(dm.sender.username == user.username){
+    for (DirectMessage dm in dms) {
+      if (dm.sender.username == user.username) {
         messages.add("${dm.receiver.username} : ${dm.message}");
       }
     }
