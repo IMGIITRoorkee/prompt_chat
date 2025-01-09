@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/role.dart';
@@ -95,6 +97,10 @@ class Server {
       "joinPerm": joinPerm.toString(),
       'finder': 'finder',
     };
+  }
+
+  String toJson() {
+    return json.encode(toMap());
   }
 
   static Server fromMap(Map<String, dynamic> map) {
