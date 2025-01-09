@@ -100,7 +100,18 @@ class Server {
   }
 
   String toJson() {
-    return json.encode(toMap());
+    var mappedRoles = roles.map((role) => role.toMap()).toList();
+    var mappedCategories =
+        categories.map((category) => category.toMap()).toList();
+    var mappedChannels = channels.map((channel) => channel.toMap()).toList();
+    Map map = {
+      'serverName': serverName,
+      'roles': mappedRoles,
+      'categories': mappedCategories,
+      "channels": mappedChannels,
+      "joinPerm": joinPerm.toString(),
+    };
+    return json.encode(map);
   }
 
   static Server fromMap(Map<String, dynamic> map) {

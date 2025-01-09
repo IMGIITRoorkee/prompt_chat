@@ -23,6 +23,18 @@ class Channel {
     };
   }
 
+  Map<String, dynamic> toMapWithoutUserInfo() {
+    var mappedMessages =
+        messages.map((message) => message.toMapWithoutUserInfo()).toList();
+
+    return {
+      'channelName': channelName,
+      'permission': permission.toString(),
+      'channelType': type.toString(),
+      'messages': mappedMessages,
+    };
+  }
+
   static Channel fromMap(Map<String, dynamic> map) {
     late Permission perm;
     late ChannelType chanType;
