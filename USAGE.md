@@ -1,6 +1,6 @@
 Here’s an improved, detailed, and structured version of your CLI documentation for the chat application, with code examples for better clarity:
 
-```markdown
+
 # Command Line Interface Documentation
 
 Welcome to the chat application! This documentation will guide you through the various CLI commands available to interact with the platform. Commands are categorized for ease of use.
@@ -52,7 +52,7 @@ Log in with your username and password.
 **Command:**  
 ```bash
 login --username <username> --password <password>
-```
+
 **Example:**  
 ```bash
 login --username alice123 --password secretpass
