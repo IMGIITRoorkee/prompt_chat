@@ -16,6 +16,7 @@ import 'package:prompt_chat/db/database_crud.dart';
 import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
+import 'dart:convert';
 
 class ChatAPI {
   List<User> users = [];
@@ -40,12 +41,12 @@ class ChatAPI {
   // Register a user
   Future<void> registerUser(String? username, String? password) async {
     if (username == null || password == null) {
-      
       throw InvalidCredentialsException();
     }
     if (!isPasswordValid(password)) {
-     print("Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
-    throw WeakPasswordException();
+      print(
+          "Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+      throw WeakPasswordException();
     }
     validUsername(username);
     var newUser = User(username, password, false);
@@ -567,20 +568,18 @@ class ChatAPI {
     var reqServer = getServer(servername);
     var reqUser = getUser(username);
     reqServer.checkAccessLevels(username, [1, 2]);
-    var inviteCode = InviteCode(reqUser, "",reqServer);
-    for(var invitecode in reqServer.inviteCodes ){
-      if(invitecode.code == inviteCode.code){
+    var inviteCode = InviteCode(reqUser, "", reqServer);
+    for (var invitecode in reqServer.inviteCodes) {
+      if (invitecode.code == inviteCode.code) {
         return createInviteCode(servername, username);
-      }
-      else if (invitecode.inviter == reqUser){
+      } else if (invitecode.inviter == reqUser) {
         return invitecode.code;
       }
     }
     reqServer.inviteCodes.add(inviteCode);
-    await DatabaseIO.addToDB(inviteCode,"invitecodes");
+    await DatabaseIO.addToDB(inviteCode, "invitecodes");
     inviteCodes.add(inviteCode);
     return inviteCode.code;
-
   }
 
   // join server using invite code
@@ -596,7 +595,7 @@ class ChatAPI {
     invite.invitedUsers.add(reqUser);
   }
 
-  void sendDm(String recieverusername, String message, String senderusername){
+  void sendDm(String recieverusername, String message, String senderusername) {
     User sender = getUser(senderusername);
     User reciever = getUser(recieverusername);
     DirectMessage dm = DirectMessage(sender, reciever, message);
@@ -604,27 +603,109 @@ class ChatAPI {
     dm.send();
   }
 
-  Future<List<String>> getRecievedDms(String username) async{
+  Future<List<String>> getRecievedDms(String username) async {
     User user = getUser(username);
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
-    for(DirectMessage dm in dms){
-      if(dm.receiver.username == user.username){
+    for (DirectMessage dm in dms) {
+      if (dm.receiver.username == user.username) {
         messages.add("${dm.sender.username} : ${dm.message}");
       }
     }
     return messages;
   }
 
-  Future<List<String>> getSentDms(String username) async{
+  Future<List<String>> getSentDms(String username) async {
     User user = getUser(username);
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
-    for(DirectMessage dm in dms){
-      if(dm.sender.username == user.username){
+    for (DirectMessage dm in dms) {
+      if (dm.sender.username == user.username) {
         messages.add("${dm.receiver.username} : ${dm.message}");
       }
     }
     return messages;
+  }
+
+  Future<void> exportServerData(String? serverName, String? username) async {
+    if (serverName == null || username == null) {
+      throw Exception("Please provide valid server name and username");
+    }
+
+    var reqServer = getServer(serverName);
+    reqServer.checkAccessLevel(username, 2); // Ensure only owner can export
+
+    // Convert server to JSON
+    final serverJson = reqServer.toMap();
+
+    // Create timestamp for unique filename
+    final timestamp =
+        DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
+    final fileName =
+        'server_${serverName.replaceAll(' ', '_')}_$timestamp.json';
+
+    try {
+      // Create a backup directory if it doesn't exist
+      var backupDir = Directory('backups');
+      if (!await backupDir.exists()) {
+        await backupDir.create();
+      }
+
+      // Write JSON to file in backups directory
+      final file = File('${backupDir.path}${Platform.pathSeparator}$fileName');
+      await file.writeAsString(jsonEncode(serverJson), flush: true);
+      print('Server data exported successfully to ${file.path}');
+    } catch (e) {
+      throw Exception('Failed to export server data: $e');
+    }
+  }
+
+  Future<void> importServerData(String? filePath, String? username) async {
+    if (filePath == null || username == null) {
+      throw Exception("Please provide valid file path and username");
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw Exception('File not found: $filePath');
+      }
+
+      // Read and parse JSON file
+      final jsonString = await file.readAsString();
+      final serverData = jsonDecode(jsonString);
+
+      // Basic validation of JSON structure
+      if (!serverData.containsKey('serverName') ||
+          !serverData.containsKey('members') ||
+          !serverData.containsKey('roles')) {
+        throw Exception('Invalid server data format');
+      }
+
+      // Check if server name already exists
+      final serverName = serverData['serverName'];
+      if (servers.any((server) => server.serverName == serverName)) {
+        throw Exception('A server with this name already exists');
+      }
+
+      // Create new server instance
+      var newServer = Server.fromMap(serverData);
+
+      // Validate that the importing user exists and will be the owner
+      var importingUser = getUser(username);
+      if (!newServer.isAccessAllowed(username, 2)) {
+        // Ensure the importing user becomes the owner
+        await newServer.swapOwner(
+            newServer.getRole('owner').holders[0].username, username);
+      }
+
+      // Add server to the list and database
+      servers.add(newServer);
+      await DatabaseIO.addToDB(newServer, 'servers');
+
+      print('Server data imported successfully');
+    } catch (e) {
+      throw Exception('Failed to import server data: $e');
+    }
   }
 }
