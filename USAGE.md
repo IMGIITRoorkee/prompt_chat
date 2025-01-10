@@ -286,5 +286,3 @@ display-messages --server myServer --channel text-chat
 
 ---
 
-This documentation should now provide users with a more comprehensive understanding of the chat application's CLI commands.
-```
