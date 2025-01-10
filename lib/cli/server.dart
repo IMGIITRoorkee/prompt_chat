@@ -5,6 +5,7 @@ import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/role.dart';
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/message.dart';
+import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/cli/channel.dart';
 import 'package:prompt_chat/db/database_crud.dart';
@@ -110,9 +111,91 @@ class Server {
       'roles': mappedRoles,
       'categories': mappedCategories,
       "channels": mappedChannels,
-      "joinPerm": joinPerm.toString(),
+      "joinPerm": joinPerm.name,
     };
     return json.encode(map);
+  }
+
+  static Server fromJson(Map<String, dynamic> map, User owner) {
+    late List<Role> unmappedRoles;
+    late List<Category> unmappedCategories;
+    late List<Channel> unmappedChannels;
+
+    Permission getPermission(String p) {
+      if (p == "owner") {
+        return Permission.owner;
+      } else if (p == "moderator") {
+        return Permission.moderator;
+      } else {
+        return Permission.member;
+      }
+    }
+
+    ChannelType getType(String t) {
+      if (t == "text") {
+        return ChannelType.text;
+      } else if (t == "voice") {
+        return ChannelType.voice;
+      } else if (t == "video") {
+        return ChannelType.video;
+      } else {
+        return ChannelType.text;
+      }
+    }
+
+    List<Channel> getChannels(dynamic m) {
+      return (m as List)
+          .map((e) => Channel(
+                channelName: e['channelName'],
+                messages: [],
+                type: getType(e['channelType']),
+                permission: getPermission(e['permission']),
+              ))
+          .toList();
+    }
+
+    if (map['categories'] == null || map['roles'] == null) {
+      throw Exception("Provide a valid json file exported through the app!");
+    } else if ((map['roles'] as List).isEmpty ||
+        (map['categories'] as List).isEmpty) {
+      throw Exception("Provide a valid json file exported through the app!");
+    }
+
+    unmappedRoles = (map['roles'] as List)
+        .map(
+          (e) => Role(
+            roleName: e['roleName'],
+            accessLevel: getPermission(e['accessLevel']),
+            holders: [],
+          ),
+        )
+        .toList();
+    unmappedCategories = (map['categories'] as List)
+        .map((e) => Category(
+              categoryName: e['categoryName'],
+              channels: getChannels(e['channels']),
+            ))
+        .toList();
+
+    if (map['channels'] == null) {
+      unmappedChannels = [];
+    } else {
+      unmappedChannels = getChannels(map['channels']);
+    }
+
+    Server s = Server(
+      serverName: map['serverName'],
+      members: [owner],
+      roles: unmappedRoles,
+      categories: unmappedCategories,
+      channels: unmappedChannels,
+      joinPerm: map['joinPerm'] == "open" ? JoinPerm.open : JoinPerm.closed,
+    );
+    s.roles
+        .firstWhere((element) => element.roleName == "owner")
+        .holders
+        .add(owner);
+    return s;
   }
 
   static Server fromMap(Map<String, dynamic> map) {

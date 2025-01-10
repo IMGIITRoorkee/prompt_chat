@@ -1,5 +1,4 @@
 import 'dart:core';
-import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:prompt_chat/cli/category.dart';
@@ -97,6 +96,21 @@ class ChatAPI {
     }
     String json = server.toJson();
     await FileUtils.writeJsonToFile(json, outputPath);
+  }
+
+  Future importServer(String? path) async {
+    if (path == null) {
+      throw Exception("Provide valid path!");
+    }
+    if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in!");
+    }
+    Map<String, dynamic> json = await FileUtils.readJsonFromFile(path);
+    User current = getUser(getCurrentLoggedIn()!);
+
+    Server s = Server.fromJson(json, current);
+    servers.add(s);
+    await DatabaseIO.addToDB(s, "servers");
   }
 
   // Display all the messages in a given server

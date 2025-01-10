@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 class FileUtils {
@@ -10,6 +11,23 @@ class FileUtils {
     await out.writeAsString(jsonString);
 
     print('JSON file saved at ${dir.path}/prompt_chat.json');
+  }
+
+  static Future<Map<String, dynamic>> readJsonFromFile(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!file.existsSync()) {
+        throw Exception('The file does not exist.');
+      }
+
+      String content = await file.readAsString();
+      Map<String, dynamic> jsonData = jsonDecode(content);
+
+      return jsonData;
+    } catch (e) {
+      print('Error reading JSON file: $e');
+      return {};
+    }
   }
 
   static bool isValidPath(String path) {

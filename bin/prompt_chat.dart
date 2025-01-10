@@ -207,6 +207,12 @@ void runApp(ChatAPI api) async {
             await api.exportServer(serverName, outputPath);
             break;
           }
+        case "import-server":
+          {
+            var path = getFlagValue("--path", currentCommand);
+            await api.importServer(path);
+            break;
+          }
         case "display-users":
           {
             api.displayUsers();

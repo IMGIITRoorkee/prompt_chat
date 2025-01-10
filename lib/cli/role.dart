@@ -15,16 +15,14 @@ class Role {
     return {
       'roleName': roleName,
       'holders': mappedHolders,
-      'accessLevel': accessLevel.toString(),
+      'accessLevel': accessLevel.name,
       "finder": "finder",
     };
   }
 
   Map<String, dynamic> toMapWithoutUserinfo() {
-    var mappedHolders = holders.map((holder) => holder.username).toList();
     return {
       'roleName': roleName,
-      'holders': mappedHolders,
       'accessLevel': accessLevel.toString(),
     };
   }
