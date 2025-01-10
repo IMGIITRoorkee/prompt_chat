@@ -100,10 +100,11 @@ class Server {
   }
 
   String toJson() {
-    var mappedRoles = roles.map((role) => role.toMap()).toList();
+    var mappedRoles = roles.map((role) => role.toMapWithoutUserinfo()).toList();
     var mappedCategories =
-        categories.map((category) => category.toMap()).toList();
-    var mappedChannels = channels.map((channel) => channel.toMap()).toList();
+        categories.map((category) => category.toMapWithoutUserinfo()).toList();
+    var mappedChannels =
+        channels.map((channel) => channel.toMapWithoutUserInfo()).toList();
     Map map = {
       'serverName': serverName,
       'roles': mappedRoles,

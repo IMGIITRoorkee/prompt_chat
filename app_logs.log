@@ -12,3 +12,10 @@
 [2025-01-09T23:06:47.367150] --username: [INFO] User logged in
 [2025-01-09T23:06:57.892615] somye: [INFO] Created new server myserver
 [2025-01-09T23:08:58.567968] somye: [INFO] Created new server myserver
+[2025-01-10T21:02:25.868336] userna: [INFO] Added channel firstchan to server ooo
+[2025-01-10T21:03:20.092833] userna: [INFO] Added channel firstchan to server ooo
+[2025-01-10T21:04:31.545961] userna: [INFO] Added channel secondchan to server ooo
+[2025-01-10T21:04:43.721289] userna: [INFO] Sent message in server 'ooo' channel 'secondchan'
+[2025-01-10T21:51:55.950003] --username: [INFO] User registered
+[2025-01-10T21:52:01.942869] --username: [INFO] User logged in
+[2025-01-10T21:52:08.903358] _sksk: [INFO] Created new server 
