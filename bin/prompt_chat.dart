@@ -211,6 +211,7 @@ void runApp(ChatAPI api) async {
           {
             var path = getFlagValue("--path", currentCommand);
             await api.importServer(path);
+            print("Successfully imported server!");
             break;
           }
         case "display-users":
