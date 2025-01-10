@@ -73,12 +73,18 @@ Use `kickout-member server_name user_name` to kickout a member from a server. No
 Use `create-invite-code server_name` to create an invite code for a server. Note that you must be an owner/moderator for this.
 ### Join a servre with code
 Use `join-server-with-code invite_code` to join a server with an invite code.
-### Send a direct message
-Use `send-dm user_name` to send a direct message to a user. Then you will be asked to enter the message you want to send.
-### See your direct messages
-Use `display-dms` to see your direct messages.
-### See your sent direct messages
-Use `display-sent-dms` to see your sent direct messages.
-### Delete User
-User `delete-user` to delete the current user permanently from everywhere.
+# Direct Messages and User Management
 
+## Sending Direct Messages
+Use `send-dm --recipient username --message "your message"` to send a direct message to a user.
+
+## Viewing Messages
+Use `display-dms` with the `--filter` flag to view your messages:
+- `display-dms --filter received` to see received messages
+- `display-dms --filter sent` to see sent messages  
+- `display-dms --filter all` or just `display-dms` to see all messages
+
+## User Management
+Use `delete-user --confirm yes` to delete your user account permanently.
+
+Note: You must be logged in to use these commands.
