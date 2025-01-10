@@ -16,11 +16,19 @@ class Message {
     };
   }
 
+  Map<String, dynamic> toMapWithoutUserInfo() {
+    return {
+      'content': content,
+      'sender': sender.username,
+      'time': time.toIso8601String(),
+    };
+  }
+
   static Message fromMap(Map<String, dynamic> map) {
     return Message(
       map['content'],
       User.fromMap(map['sender']),
-      time: DateTime.tryParse(map['time']),
+      time: DateTime.tryParse(map['time'] ?? ""),
     );
   }
 }

@@ -23,6 +23,14 @@ class Channel {
     };
   }
 
+  Map<String, dynamic> toMapWithoutUserInfo() {
+    return {
+      'channelName': channelName,
+      'permission': permission.name,
+      'channelType': type.name,
+    };
+  }
+
   static Channel fromMap(Map<String, dynamic> map) {
     late Permission perm;
     late ChannelType chanType;
