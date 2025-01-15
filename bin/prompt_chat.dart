@@ -355,8 +355,10 @@ void runApp(ChatAPI api) async {
           }
         case "exit":
           {
+            print("\x1B[2J\x1B[H");
+            print("\x1B[0m");
             print("See you soon!");
-            break loop;
+            exit(0);
           }
         case "display-logs":
           {
@@ -373,13 +375,11 @@ void runApp(ChatAPI api) async {
               print("Please login to send a direct message.");
               break;
             }
-            print("Enter the message:");
-            var message = stdin.readLineSync();
-            if (message == null) {
-              print("Please enter a message.");
-              break;
-            }
-            api.sendDm(ccs.elementAt(1), message, currUsername);
+            var recipient = getFlagValue("--recipient", currentCommand);
+            var message = getFlagValue("--message", currentCommand);
+            api.sendDm(recipient, message, currUsername);
+            print("Direct message sent successfully.");
+            break;
           }
         case "display-dms":
           {
@@ -387,19 +387,18 @@ void runApp(ChatAPI api) async {
               print("Please login to view direct messages.");
               break;
             }
-            List<String> messages = await api.getRecievedDms(currUsername);
-            for (var element in messages) {
-              print(element);
+            var filter = getFlagValue("--filter", currentCommand);
+            List<String> messages;
+            if (filter == "received") {
+              messages = await api.getRecievedDms(currUsername);
+            } else if (filter == "sent") {
+              messages = await api.getSentDms(currUsername);
+            } else {
+              messages = [
+                ...await api.getRecievedDms(currUsername),
+                ...await api.getSentDms(currUsername)
+              ];
             }
-            break;
-          }
-        case "display-sent-dms":
-          {
-            if (currUsername == null) {
-              print("Please login to view direct messages.");
-              break;
-            }
-            List<String> messages = await api.getSentDms(currUsername);
             for (var element in messages) {
               print(element);
             }
@@ -411,10 +410,17 @@ void runApp(ChatAPI api) async {
               print("Please login first.");
               break;
             }
-            await api.logoutUser(currUsername);
-            currUsername = null;
-            api.deleteUser(currUsername);
-            print("User deleted successfully.");
+            var confirmFlag = getFlagValue("--confirm", currentCommand);
+            if (confirmFlag.toLowerCase() == "yes" ||
+                confirmFlag.toLowerCase() == "y") {
+              await api.logoutUser(currUsername);
+              currUsername = null;
+              api.deleteUser(currUsername);
+              print("User deleted successfully.");
+            } else {
+              print("Please add --confirm yes to confirm user deletion.");
+            }
+            break;
           }
         case "export-server-backup":
           {

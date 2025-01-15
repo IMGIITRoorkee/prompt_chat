@@ -1,11 +1,15 @@
-import 'package:prompt_chat/db/database_crud.dart';
 import 'package:bcrypt/bcrypt.dart';
+
+import 'package:prompt_chat/db/database_crud.dart';
 
 class User {
   late String username;
   late String password;
   var loggedIn = false;
   List<String> blockedUsers;
+
+  Map<String, dynamic>? _snapshot;
+
   User(this.username, this.password, this.loggedIn,
       {List<String>? blockedUsers})
       : this.blockedUsers = blockedUsers ?? [];
@@ -29,13 +33,26 @@ class User {
     );
   }
 
+  void _rollbackToSnapshot() {
+    if (_snapshot == null) return;
+    username = _snapshot!['username'];
+    password = _snapshot!['password'];
+    loggedIn = _snapshot!['loggedIn'];
+  }
+
   Future<void> login(String password) async {
     bool authed = BCrypt.checkpw(password, this.password);
     if (!(authed)) {
       throw Exception("Error : Incorrect password");
     }
+    _snapshot = toMap();
+
     loggedIn = true;
-    await UserIO.updateDB(User(username, password, true));
+    bool res = await UserIO.updateDB(
+      User(username, password, true),
+    );
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> update(String? username, String? newPass, String oldPass) async {
@@ -43,14 +60,23 @@ class User {
     if (!(authed)) {
       throw Exception("Error : Incorrect password");
     }
-    await UserIO.updateDB(
-        User(username ?? this.username, newPass ?? password, true));
+    if (newPass != null) {
+      this.password = newPass;
+      hashPassword();
+    }
+    await UserIO.updateDB(User(username ?? this.username, this.password, true));
   }
 
   Future<void> register() async {
+    _snapshot = toMap();
+    hashPassword();
+    bool res = await DatabaseIO.addToDB(this, "users");
+    if (!res) _rollbackToSnapshot();
+  }
+
+  void hashPassword() {
     var salt = BCrypt.gensalt();
     password = BCrypt.hashpw(password, salt);
-    await DatabaseIO.addToDB(this, "users");
   }
 
   Future<void> delete() async {
@@ -58,8 +84,10 @@ class User {
   }
 
   Future<void> logout() async {
+    _snapshot = toMap();
     //abhi ke liye no checks
-    await UserIO.updateDB(User(username, password, false));
+    bool res = await UserIO.updateDB(User(username, password, false));
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> blockUser(String usernameToBlock) async {
@@ -85,4 +113,8 @@ class User {
   bool isUserBlocked(String username) {
     return blockedUsers.contains(username);
   }
+
+  @override
+  String toString() =>
+      'User(username: $username, password: $password, loggedIn: $loggedIn)';
 }

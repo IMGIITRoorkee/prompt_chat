@@ -173,6 +173,16 @@ create-server --name myServer --permission closed
 ```
 `join_permission` can be `open` (anyone can join) or `closed` (invite only). Default is `open`.
 
+
+### Kickout users from server
+Use `kickout-member --server <server_name> --member <user_name>` to kickout a member from a server. Note that you must be an owner or moderator for this.
+Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner/moderator for this. 
+### Create a invite code for server
+Use `create-invite-code server_name` to create an invite code for a server. Note that you must be an owner/moderator for this.
+### Join a servre with code
+Use `join-server-with-code invite_code` to join a server with an invite code.
+# Direct Messages and User Management
+
 ---
 
 ### Join a Server
@@ -286,3 +296,17 @@ display-messages --server myServer --channel text-chat
 
 ---
 
+
+## Sending Direct Messages
+Use `send-dm --recipient username --message "your message"` to send a direct message to a user.
+
+## Viewing Messages
+Use `display-dms` with the `--filter` flag to view your messages:
+- `display-dms --filter received` to see received messages
+- `display-dms --filter sent` to see sent messages  
+- `display-dms --filter all` or just `display-dms` to see all messages
+
+## User Management
+Use `delete-user --confirm yes` to delete your user account permanently.
+
+Note: You must be logged in to use these commands.
