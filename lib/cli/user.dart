@@ -60,18 +60,23 @@ class User {
     if (!(authed)) {
       throw Exception("Error : Incorrect password");
     }
-    await UserIO.updateDB(
-        User(username ?? this.username, newPass ?? password, true));
+    if (newPass != null) {
+      this.password = newPass;
+      hashPassword();
+    }
+    await UserIO.updateDB(User(username ?? this.username, this.password, true));
   }
 
   Future<void> register() async {
     _snapshot = toMap();
+    hashPassword();
+    bool res = await DatabaseIO.addToDB(this, "users");
+    if (!res) _rollbackToSnapshot();
+  }
 
+  void hashPassword() {
     var salt = BCrypt.gensalt();
     password = BCrypt.hashpw(password, salt);
-    bool res = await DatabaseIO.addToDB(this, "users");
-
-    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> delete() async {
