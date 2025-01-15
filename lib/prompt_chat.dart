@@ -46,9 +46,6 @@ class ChatAPI {
       print(
           "Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
       throw WeakPasswordException();
-      print(
-          "Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
-      throw WeakPasswordException();
     }
     validUsername(username);
     var newUser = User(username, password, false);
@@ -629,7 +626,6 @@ class ChatAPI {
   }
 
   Future<List<String>> getRecievedDms(String username) async {
-  Future<List<String>> getRecievedDms(String username) async {
     User user = getUser(username);
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
@@ -655,51 +651,54 @@ class ChatAPI {
     return messages;
   }
 
-    Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
+  Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
     if (blockerUsername == null || userToBlock == null) {
       throw Exception("Please enter valid usernames");
     }
     if (blockerUsername == userToBlock) {
       throw Exception("You cannot block yourself");
     }
-    
+
     var blocker = getUser(blockerUsername);
-    var userBeingBlocked = getUser(userToBlock); // This will verify the user exists
-    
+    var userBeingBlocked =
+        getUser(userToBlock); // This will verify the user exists
+
     if (blocker.blockedUsers.contains(userToBlock)) {
       throw Exception("User is already blocked");
     }
-    
+
     // Create a new list with the existing blocked users plus the new one
     List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
       ..add(userToBlock);
-    
+
     // Update the blockedUsers list
     blocker.blockedUsers = updatedBlockedUsers;
-    
+
     // Save to database
     await UserIO.updateDB(blocker);
   }
 
-  Future<void> unblockUser(String? blockerUsername, String? userToUnblock) async {
+  Future<void> unblockUser(
+      String? blockerUsername, String? userToUnblock) async {
     if (blockerUsername == null || userToUnblock == null) {
       throw Exception("Please enter valid usernames");
     }
-    
+
     var blocker = getUser(blockerUsername);
-    var userBeingUnblocked = getUser(userToUnblock); // This will verify the user exists
-    
+    var userBeingUnblocked =
+        getUser(userToUnblock); // This will verify the user exists
+
     if (!blocker.blockedUsers.contains(userToUnblock)) {
       throw Exception("User is not blocked");
     }
-    
+
     // Create a new list without the unblocked user
     List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
       ..remove(userToUnblock);
-    
+
     // Update the blockedUsers list
     blocker.blockedUsers = updatedBlockedUsers;
-    
+
     // Save to database
     await UserIO.updateDB(blocker);
   }
