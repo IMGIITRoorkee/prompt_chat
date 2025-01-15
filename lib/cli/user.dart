@@ -5,7 +5,10 @@ class User {
   late String username;
   late String password;
   var loggedIn = false;
-  User(this.username, this.password, this.loggedIn);
+  List<String> blockedUsers;
+  User(this.username, this.password, this.loggedIn,
+      {List<String>? blockedUsers})
+      : this.blockedUsers = blockedUsers ?? [];
   //to be called upon object creation
   Map<String, dynamic> toMap() {
     return {
@@ -13,6 +16,7 @@ class User {
       'password': password,
       'loggedIn': loggedIn,
       'finder': "finder",
+      'blockedUsers': blockedUsers,
     };
   }
 
@@ -21,6 +25,7 @@ class User {
       map['username'],
       map['password'],
       map['loggedIn'],
+      blockedUsers: List<String>.from(map['blockedUsers'] ?? []),
     );
   }
 
@@ -55,5 +60,29 @@ class User {
   Future<void> logout() async {
     //abhi ke liye no checks
     await UserIO.updateDB(User(username, password, false));
+  }
+
+  Future<void> blockUser(String usernameToBlock) async {
+    if (username == usernameToBlock) {
+      throw Exception("Error: Cannot block yourself");
+    }
+
+    if (!blockedUsers.contains(usernameToBlock)) {
+      blockedUsers.add(usernameToBlock);
+      await UserIO.updateDB(this);
+    }
+  }
+
+  Future<void> unblockUser(String usernameToUnblock) async {
+    if (blockedUsers.contains(usernameToUnblock)) {
+      blockedUsers.remove(usernameToUnblock);
+      await UserIO.updateDB(this);
+    } else {
+      throw Exception("Error: User is not blocked");
+    }
+  }
+
+  bool isUserBlocked(String username) {
+    return blockedUsers.contains(username);
   }
 }
