@@ -1,41 +1,288 @@
-## Registering and logging in
+Here’s an improved, detailed, and structured version of your CLI documentation for the chat application, with code examples for better clarity:
 
-### Register a user
-Use the command `register username password` to register a new user on the platform. Note that you will need to login separately after registering.
+
+# Command Line Interface Documentation
+
+Welcome to the chat application! This documentation will guide you through the various CLI commands available to interact with the platform. Commands are categorized for ease of use.
+
+---
+
+## Table of Contents
+1. [User Management](#user-management)
+   - Register
+   - Login
+   - Logout
+   - Update Username
+   - Update Password
+   - Delete User
+2. [User Interaction](#user-interaction)
+   - Search Users
+   - Send Direct Messages
+   - View Direct Messages
+3. [Server Management](#server-management)
+   - Create Server
+   - Join Server
+   - Leave Server
+   - Invite Members
+   - Manage Categories and Channels
+   - Role Management
+4. [Messaging](#messaging)
+   - Send Messages
+   - Display Messages
+
+---
+
+## User Management
+
+### Register
+Create a new user with the `register` command.  
+**Command:**  
+```bash
+register --username <username> --password <password>
+```
+**Example:**  
+```bash
+register --username alice123 --password secretpass
+```
+
+---
+
 ### Login
-Use `login username password` to login as an existing user. Note that only one user can be logged in during a session. 
+Log in with your username and password.  
+**Command:**  
+```bash
+login --username <username> --password <password>
+
+**Example:**  
+```bash
+login --username alice123 --password secretpass
+```
+
+---
+
 ### Logout
-Use `logout` to logout of the session.
+Log out of your current session.  
+**Command:**  
+```bash
+logout
+```
+**Example:**  
+```bash
+logout
+```
 
-## Servers
+---
 
-### Create a server
-Use `create-server server_name join_permission` to create a new server.  You will automatically be marked as the owner of that server and gain the ability to add other users, add categories, channels and manage permissions. `join_permission` can be either set as open or closed. Open servers can be joined by any users, while closed servers require owner to add new members. It is set to open by default.
-### Joining a server 
-Use `join-server server_name` to join a server, granted the server is open.
-### Add users to a server
-Use `add-member server_name user_name` to add existing users to a server. Ypu must be logged in to do so. The added user will automatically be given member privileges.
-### Add categories to a server
-Use `add-category server_name category_name` to add a category to a server (requires owner privileges). The newly added category will not have any channels in it by default.
-### Add channels to a server
-Use `add-channel server_name channel_name channel_perms channel_type parent_category` , with the parent_category flag being optional. (requires owner privileges). By default, the channel will not belong to any category.
-Channels can have three levels of permission - member, moderator, and owner, allowing varying levels of access. Channels currently support three types - text, voice and video.
-### Send message in a server
-Use `send-msg server_name channel_name`, to send a message in a text channel. (Can be done only while logged in). You will then be prompted to enter your message. 
-### Displaying messages
-Use the format `display-item` to display a list of said item. Here, messages are currently supported.
-NOTE : specify server_name for display-messages.
-### Creating a new role for a server
-Use `create-role server_name role_name role_permission` to create a new role for a server (owner privileges required). Note that role names must be unique for a server. Permissions can be - owner, moderator or member (by default).
-### Assign an existing role in a server to a member
-Use `assign-role server_name role_name member_name` to assign a role in a server to a member (owner privileges required).
-### Adding channels to categories for a server (Owner only)
-Use `channel-to-cat server_name channel_name category_name` to assign an existing channel in that server to an existing category. 
-### Changing permissions for a channel (Owner only)
-Use `change-perm server_name channel_name new_perm` to change the permissions for an existing channel in server_name. Permissions can be - member, moderator or owner.
-### Relinquish ownership of a server
-Use `change-ownership server_name new_owner` to give your owner rights to `new_owner`.
-### Leave a server
-Use `leave-server server_name` to leave a server. Note that you must relinquish your ownership rights using `change-ownership` first before leaving a server if you are its owner.
-### Kickout users from server
-Use `kickout-member server_name user_name` to kickout a member from a server. Note that you must be an owner or moderator for this. 
+### Update Username
+Change your username.  
+**Command:**  
+```bash
+update-username <new_username> <current_password>
+```
+**Example:**  
+```bash
+update-username alice_updated secretpass
+```
+
+---
+
+### Update Password
+Change your password.  
+**Command:**  
+```bash
+update-password <new_password> <current_password>
+```
+**Example:**  
+```bash
+update-password newsecretpass secretpass
+```
+
+---
+
+### Delete User
+Permanently delete your account and all associated data.  
+**Command:**  
+```bash
+delete-user
+```
+**Example:**  
+```bash
+delete-user
+```
+
+---
+
+## User Interaction
+
+### Search Users
+Find other users on the platform. Returns up to 5 results.  
+**Command:**  
+```bash
+search-users <search_term>
+```
+**Example:**  
+```bash
+search-users alice
+```
+
+---
+
+### Send Direct Messages
+Send a private message to another user.  
+**Command:**  
+```bash
+send-dm <user_name>
+```
+**Example:**  
+```bash
+send-dm bob123
+```
+You will be prompted to type your message after running the command.
+
+---
+
+### View Direct Messages
+View received direct messages.  
+**Command:**  
+```bash
+display-dms
+```
+
+---
+
+### View Sent Direct Messages
+View messages you have sent.  
+**Command:**  
+```bash
+display-sent-dms
+```
+
+---
+
+## Server Management
+
+### Create a Server
+Set up a new server.  
+**Command:**  
+```bash
+create-server --name <server_name> --permission <join_permission>
+```
+**Example:**  
+```bash
+create-server --name myServer --permission closed
+```
+`join_permission` can be `open` (anyone can join) or `closed` (invite only). Default is `open`.
+
+---
+
+### Join a Server
+Join an existing server.  
+**Command:**  
+```bash
+join-server --server <server_name>
+```
+**Example:**  
+```bash
+join-server --server myServer
+```
+
+---
+
+### Leave a Server
+Leave a server you are part of.  
+**Command:**  
+```bash
+leave-server --server <server_name>
+```
+**Example:**  
+```bash
+leave-server --server myServer
+```
+If you are the server owner, transfer ownership first.
+
+---
+
+### Add Members to a Server
+Invite users to your server (owner only).  
+**Command:**  
+```bash
+add-member --server <server_name> --member <user_name>
+```
+**Example:**  
+```bash
+add-member --server myServer --member charlie123
+```
+
+---
+
+### Create Categories and Channels
+- **Add a Category:**  
+  ```bash
+  add-category --server <server_name> --category <category_name>
+  ```
+  **Example:**  
+  ```bash
+  add-category --server myServer --category general
+  ```
+
+- **Add a Channel:**  
+  ```bash
+  add-channel --server <server_name> --channel <channel_name> --permissions <channel_perms> --type <channel_type> --category <parent_category>
+  ```
+  **Example:**  
+  ```bash
+  add-channel --server myServer --channel text-chat --permissions member --type text --category general
+  ```
+
+---
+
+### Manage Roles
+- **Create a Role:**  
+  ```bash
+  create-role --server <server_name> --role <role_name> --permission <role_permission>
+  ```
+  **Example:**  
+  ```bash
+  create-role --server myServer --role moderator --permission moderator
+  ```
+
+- **Assign a Role:**  
+  ```bash
+  assign-role --server <server_name> --role <role_name> --member <member_name>
+  ```
+  **Example:**  
+  ```bash
+  assign-role --server myServer --role moderator --member charlie123
+  ```
+
+---
+
+## Messaging
+
+### Send a Message
+Send a message in a text channel.  
+**Command:**  
+```bash
+send-msg --server <server_name> --channel <channel_name>
+```
+**Example:**  
+```bash
+send-msg --server myServer --channel text-chat
+```
+You will be prompted to type your message after running the command.
+
+---
+
+### Display Messages
+View all messages in a channel.  
+**Command:**  
+```bash
+display-messages --server <server_name> --channel <channel_name>
+```
+**Example:**  
+```bash
+display-messages --server myServer --channel text-chat
+```
+
+---
+

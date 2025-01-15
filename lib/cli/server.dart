@@ -1,3 +1,4 @@
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/role.dart';
 import 'package:prompt_chat/cli/category.dart';
@@ -12,6 +13,7 @@ class Server {
   List<Role> roles;
   List<Category> categories;
   List<Channel> channels;
+  List<InviteCode> inviteCodes = [];
   late String serverName;
   late JoinPerm joinPerm;
 
@@ -338,17 +340,31 @@ class Server {
       throw Exception("User is not logged in");
     }
     List<Role> senderRoles = extractRoles(user);
-    print(senderRoles);
     senderRoles.firstWhere((element) => element.accessLevel.index == accessNo,
         orElse: () =>
             throw Exception("You are not authorised for this action"));
+  }
+
+  void checkAccessLevels(String username, List<int> accessNos) {
+    var user = getMember(username);
+    if (!(user.loggedIn)) {
+      throw Exception("User is not logged in");
+    }
+    List<Role> senderRoles = extractRoles(user);
+    senderRoles.firstWhere((element) {
+      for (int a in accessNos) {
+        if (element.accessLevel.index == a) {
+          return true;
+        }
+      }
+      return false;
+    }, orElse: () => throw Exception("You are not authorised for this action"));
   }
 
   bool isAccessAllowed(String username, int accessNo) {
     var user = getMember(username);
 
     List<Role> senderRoles = extractRoles(user);
-    print(senderRoles);
     return senderRoles.any((role) => role.accessLevel.index == accessNo);
   }
 
