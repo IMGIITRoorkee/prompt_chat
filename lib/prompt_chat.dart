@@ -1,8 +1,12 @@
 import 'dart:core';
+import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:prompt_chat/cli/category.dart';
 import 'package:prompt_chat/cli/channel.dart';
+import 'package:prompt_chat/cli/direct_message.dart';
 import 'package:prompt_chat/cli/exceptions/weak_pass.dart';
+import 'package:prompt_chat/cli/invite-code.dart';
 import 'package:prompt_chat/cli/message.dart';
 import 'package:prompt_chat/cli/user.dart';
 import 'package:prompt_chat/cli/server.dart';
@@ -16,6 +20,7 @@ import 'package:prompt_chat/enum/server_type.dart';
 class ChatAPI {
   List<User> users = [];
   List<Server> servers = [];
+  List<InviteCode> inviteCodes = [];
   bool someoneLoggedIn = false;
 
   // Populate users & servers array from db
@@ -23,6 +28,7 @@ class ChatAPI {
     // users.forEach((element) {print(element.username);});
     users = await UserIO.getAllUsers();
     servers = await ServerIO.getAllServers();
+    inviteCodes = await InviteCodeIO.getAllInviteCodes();
   }
 
   // Check if a given username exists
@@ -36,11 +42,34 @@ class ChatAPI {
     if (username == null || password == null) {
       throw InvalidCredentialsException();
     }
+    if (!isPasswordValid(password)) {
+      print(
+          "Password must be atleast 8 characters long, having atleast a number & a special character. Please try again.");
+      throw WeakPasswordException();
+    }
     validUsername(username);
     var newUser = User(username, password, false);
 
     await newUser.register();
     users.add(newUser);
+  }
+
+  Future<void> deleteUser(String? username) async {
+    if (username == null) {
+      throw Exception("Please enter a valid command");
+    }
+
+    var reqUser = getUser(username);
+    users.remove(reqUser);
+
+    for (var server in servers) {
+      server.roles.forEach((role) => role.holders.remove(reqUser));
+      server.channels.forEach((channel) {
+        channel.messages.removeWhere((mssg) => mssg.sender == reqUser);
+      });
+      server.members.remove(reqUser);
+    }
+    await reqUser.delete();
   }
 
   void validUsername(String username) {
@@ -56,10 +85,22 @@ class ChatAPI {
       throw Exception("Please enter a valid command");
     }
     var reqServer = getServer(serverName);
+    var currentUser = getCurrentLoggedIn();
+    if (currentUser == null) {
+      throw Exception("You must be logged in to view messages");
+    }
+    var user = getUser(currentUser);
+
     for (Channel channel in reqServer.channels) {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
-        print("${message.sender.username} : ${message.content}");
+        // Only display message if sender is not blocked
+        if (!user.blockedUsers.contains(message.sender.username)) {
+          String formattedDate =
+              intl.DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+          print(
+              "${message.sender.username} ($formattedDate): ${message.content}");
+        }
       }
     }
   }
@@ -102,9 +143,6 @@ class ChatAPI {
   Future<void> loginUser(String? username, String? password) async {
     if (password == null || username == null) {
       throw InvalidCredentialsException();
-    }
-    if (!isPasswordValid(password)) {
-      throw WeakPasswordException();
     }
     if (someoneLoggedIn) {
       throw Exception("Please logout of the current session to login again");
@@ -273,6 +311,9 @@ class ChatAPI {
       throw Exception(
           "Please enter the valid credentials, or login to continue.");
     }
+    if (categoryName.isEmpty) {
+      throw Exception("Category name must not be empty!");
+    }
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
@@ -346,12 +387,24 @@ class ChatAPI {
     var reqServer = getServer(serverName);
     var reqUser = getUser(userName);
     var reqChannel = reqServer.getChannel(channelName);
+
     if (reqChannel.type != ChannelType.text) {
       throw Exception("You can only send a message in a text channel");
     }
     if (!(reqUser.loggedIn)) {
       throw Exception("Not logged in");
     }
+
+    // Check if any member in the channel has blocked the sender
+    for (var member in reqServer.members) {
+      if (member.blockedUsers.contains(userName)) {
+        // We still add the message but inform the sender they're blocked
+        print(
+            "Note: Some members won't see this message as they have blocked you");
+        break;
+      }
+    }
+
     await reqServer.addMessageToChannel(
         reqChannel, reqUser, Message(messageContent, reqUser));
   }
@@ -496,6 +549,7 @@ class ChatAPI {
       choices: servers,
       limit: 5,
       cutoff: 50,
+      getter: (obj) => obj.serverName,
     ).forEach(
       (element) {
         print(element.choice.serverName);
@@ -512,6 +566,7 @@ class ChatAPI {
       choices: users,
       limit: 5,
       cutoff: 50,
+      getter: (obj) => obj.username,
     ).forEach(
       (element) {
         print(element.choice.username);
@@ -529,5 +584,122 @@ class ChatAPI {
         }
       }
     }
+  }
+
+  // create a new invite code
+  Future<String> createInviteCode(String servername, String username) async {
+    var reqServer = getServer(servername);
+    var reqUser = getUser(username);
+    reqServer.checkAccessLevels(username, [1, 2]);
+    var inviteCode = InviteCode(reqUser, "", reqServer);
+    for (var invitecode in reqServer.inviteCodes) {
+      if (invitecode.code == inviteCode.code) {
+        return createInviteCode(servername, username);
+      } else if (invitecode.inviter == reqUser) {
+        return invitecode.code;
+      }
+    }
+    reqServer.inviteCodes.add(inviteCode);
+    await DatabaseIO.addToDB(inviteCode, "invitecodes");
+    inviteCodes.add(inviteCode);
+    return inviteCode.code;
+  }
+
+  // join server using invite code
+  Future<void> joinServerWithCode(String inviteCode, String username) async {
+    var invite = inviteCodes.firstWhere((element) => element.code == inviteCode,
+        orElse: () => throw Exception("Invalid invite code"));
+    var reqUser = getUser(username);
+    var reqServer = invite.server;
+    if (reqServer.isMember(reqUser.username)) {
+      throw Exception("The user is already a member of the server");
+    }
+    await reqServer.addMember(reqUser);
+    invite.invitedUsers.add(reqUser);
+  }
+
+  void sendDm(String recieverusername, String message, String senderusername) {
+    User sender = getUser(senderusername);
+    User reciever = getUser(recieverusername);
+    DirectMessage dm = DirectMessage(sender, reciever, message);
+    dm.send();
+  }
+
+  Future<List<String>> getRecievedDms(String username) async {
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for (DirectMessage dm in dms) {
+      // Only show messages if sender is not blocked
+      if (dm.receiver.username == user.username &&
+          !user.blockedUsers.contains(dm.sender.username)) {
+        messages.add("${dm.sender.username} : ${dm.message}");
+      }
+    }
+    return messages;
+  }
+
+  Future<List<String>> getSentDms(String username) async {
+    User user = getUser(username);
+    List<DirectMessage> dms = await DirectMessage.getMessages(user);
+    List<String> messages = [];
+    for (DirectMessage dm in dms) {
+      if (dm.sender.username == user.username) {
+        messages.add("${dm.receiver.username} : ${dm.message}");
+      }
+    }
+    return messages;
+  }
+
+  Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
+    if (blockerUsername == null || userToBlock == null) {
+      throw Exception("Please enter valid usernames");
+    }
+    if (blockerUsername == userToBlock) {
+      throw Exception("You cannot block yourself");
+    }
+
+    var blocker = getUser(blockerUsername);
+    var userBeingBlocked =
+        getUser(userToBlock); // This will verify the user exists
+
+    if (blocker.blockedUsers.contains(userToBlock)) {
+      throw Exception("User is already blocked");
+    }
+
+    // Create a new list with the existing blocked users plus the new one
+    List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
+      ..add(userToBlock);
+
+    // Update the blockedUsers list
+    blocker.blockedUsers = updatedBlockedUsers;
+
+    // Save to database
+    await UserIO.updateDB(blocker);
+  }
+
+  Future<void> unblockUser(
+      String? blockerUsername, String? userToUnblock) async {
+    if (blockerUsername == null || userToUnblock == null) {
+      throw Exception("Please enter valid usernames");
+    }
+
+    var blocker = getUser(blockerUsername);
+    var userBeingUnblocked =
+        getUser(userToUnblock); // This will verify the user exists
+
+    if (!blocker.blockedUsers.contains(userToUnblock)) {
+      throw Exception("User is not blocked");
+    }
+
+    // Create a new list without the unblocked user
+    List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
+      ..remove(userToUnblock);
+
+    // Update the blockedUsers list
+    blocker.blockedUsers = updatedBlockedUsers;
+
+    // Save to database
+    await UserIO.updateDB(blocker);
   }
 }
