@@ -1,5 +1,6 @@
-import 'package:prompt_chat/db/database_crud.dart';
 import 'package:bcrypt/bcrypt.dart';
+
+import 'package:prompt_chat/db/database_crud.dart';
 
 class User {
   late String username;
@@ -107,4 +108,8 @@ class User {
   bool isUserBlocked(String username) {
     return blockedUsers.contains(username);
   }
+
+  @override
+  String toString() =>
+      'User(username: $username, password: $password, loggedIn: $loggedIn)';
 }
