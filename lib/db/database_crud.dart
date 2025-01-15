@@ -26,38 +26,19 @@ class DatabaseIO {
     return reqCollection;
   }
 
-  static Future<void> deleteDB(dynamic document) async {
+  static Future<bool> deleteDB(dynamic document) async {
     var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
     var db = await connectDB(env['MONGO_URI']!);
     var reqCollection = db.collection("users");
-    await reqCollection.deleteOne({'username': document});
+    WriteResult result = await reqCollection.deleteOne({'username': document});
     db.close();
     return result.isSuccess;
-  }
-
-  static Future<List<Map<String, dynamic>>> getFromDB(
-      String collectionName) async {
-    var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
-    var db = await connectDB(env['MONGO_URI']!);
-    var reqCollection = await db.collection(collectionName).find().toList();
-    db.close();
-    return reqCollection;
-  }
-
-  static Future<void> deleteDB(dynamic document) async {
-    var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
-    var db = await connectDB(env['MONGO_URI']!);
-    var reqCollection = db.collection("users");
-    await reqCollection.deleteOne({'username': document});
-    db.close();
   }
 }
 
 class UserIO extends DatabaseIO {
   UserIO._();
   static Future<List<User>> getAllUsers() async {
-    var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
-    var db = await connectDB(env['MONGO_URI']!);
     var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
     var db = await connectDB(env['MONGO_URI']!);
     var reqUsers =
@@ -89,13 +70,14 @@ class ServerIO extends DatabaseIO {
     return reqServers.map((e) => Server.fromMap(e)).toList();
   }
 
-  static Future<void> updateDB(dynamic document) async {
+  static Future<bool> updateDB(dynamic document) async {
     var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
     var db = await connectDB(env['MONGO_URI']!);
     var reqCollection = db.collection("servers");
-    await reqCollection
+    WriteResult result = await reqCollection
         .replaceOne({'serverName': document.serverName}, document.toMap());
     db.close();
+    return result.isSuccess;
   }
 }
 

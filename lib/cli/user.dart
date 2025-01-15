@@ -77,10 +77,6 @@ class User {
     await DatabaseIO.deleteDB(username);
   }
 
-  Future<void> delete() async {
-    await DatabaseIO.deleteDB(username);
-  }
-
   Future<void> logout() async {
     _snapshot = toMap();
     //abhi ke liye no checks
