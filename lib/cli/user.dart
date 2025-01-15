@@ -70,7 +70,8 @@ class User {
   Future<void> register() async {
     _snapshot = toMap();
     hashPassword();
-    await DatabaseIO.addToDB(this, "users");
+    bool res = await DatabaseIO.addToDB(this, "users");
+    if (!res) _rollbackToSnapshot();
   }
 
   void hashPassword() {
