@@ -311,6 +311,9 @@ class ChatAPI {
       throw Exception(
           "Please enter the valid credentials, or login to continue.");
     }
+    if (categoryName.isEmpty) {
+      throw Exception("Category name must not be empty!");
+    }
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
@@ -648,51 +651,54 @@ class ChatAPI {
     return messages;
   }
 
-    Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
+  Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
     if (blockerUsername == null || userToBlock == null) {
       throw Exception("Please enter valid usernames");
     }
     if (blockerUsername == userToBlock) {
       throw Exception("You cannot block yourself");
     }
-    
+
     var blocker = getUser(blockerUsername);
-    var userBeingBlocked = getUser(userToBlock); // This will verify the user exists
-    
+    var userBeingBlocked =
+        getUser(userToBlock); // This will verify the user exists
+
     if (blocker.blockedUsers.contains(userToBlock)) {
       throw Exception("User is already blocked");
     }
-    
+
     // Create a new list with the existing blocked users plus the new one
     List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
       ..add(userToBlock);
-    
+
     // Update the blockedUsers list
     blocker.blockedUsers = updatedBlockedUsers;
-    
+
     // Save to database
     await UserIO.updateDB(blocker);
   }
 
-  Future<void> unblockUser(String? blockerUsername, String? userToUnblock) async {
+  Future<void> unblockUser(
+      String? blockerUsername, String? userToUnblock) async {
     if (blockerUsername == null || userToUnblock == null) {
       throw Exception("Please enter valid usernames");
     }
-    
+
     var blocker = getUser(blockerUsername);
-    var userBeingUnblocked = getUser(userToUnblock); // This will verify the user exists
-    
+    var userBeingUnblocked =
+        getUser(userToUnblock); // This will verify the user exists
+
     if (!blocker.blockedUsers.contains(userToUnblock)) {
       throw Exception("User is not blocked");
     }
-    
+
     // Create a new list without the unblocked user
     List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
       ..remove(userToUnblock);
-    
+
     // Update the blockedUsers list
     blocker.blockedUsers = updatedBlockedUsers;
-    
+
     // Save to database
     await UserIO.updateDB(blocker);
   }
