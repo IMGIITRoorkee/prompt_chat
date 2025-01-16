@@ -166,7 +166,7 @@ class ChatAPI {
   // Logout a user
   Future<void> logoutUser(String? username) async {
     if (username == null) {
-      throw InvalidCredentialsException();
+      throw Exception("No user logged in currently!");
     }
     var reqUser = getUser(username);
     reqUser.loggedIn = false;
@@ -230,6 +230,9 @@ class ChatAPI {
     if (serverName == null || userName == null) {
       throw Exception(
           "Please enter the required credentials, or login to continue.");
+    }
+    if (serverName.isEmpty) {
+      throw Exception("Server name cannot be empty");
     }
     if (servers.any((element) => element.serverName == serverName)) {
       throw Exception("Server with same name already exists!");
