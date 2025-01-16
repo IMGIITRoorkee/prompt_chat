@@ -2,9 +2,9 @@ import 'package:prompt_chat/cli/exceptions/timeout.dart';
 import 'package:prompt_chat/cli/logsysten/logger_service.dart';
 import 'package:prompt_chat/constants/helpString.dart';
 import 'package:prompt_chat/prompt_chat.dart';
+import 'package:prompt_chat/utils/get_flag.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:prompt_chat/utils/get_flag.dart';
 
 // Create a broadcast stream that can be listened to multiple times
 final stdinBroadcast = stdin.asBroadcastStream();
@@ -95,7 +95,7 @@ void runApp(ChatAPI api) async {
             var password = getFlagValue("--password", currentCommand);
             await api.registerUser(username, password);
             print("Registration successful!");
-            logger.info("User registered", ccs[1]);
+            logger.info("User registered", ccs.elementAt(1));
             break;
           }
         case "login":
@@ -106,7 +106,7 @@ void runApp(ChatAPI api) async {
             currUsername = username;
             print(
                 "\x1B[92m✔️  Login Successful!\n✨ Welcome, \x1B[96m$currUsername!\x1B[0m 🚀");
-            logger.info("User logged in", ccs[1]);
+            logger.info("User logged in", ccs.elementAt(1));
             break;
           }
         case "logout":
@@ -119,14 +119,16 @@ void runApp(ChatAPI api) async {
           }
         case "update-username":
           {
-            await api.updateUsername(ccs[1], ccs[2]);
-            currUsername = ccs[1];
+            await api.updateUsername(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
+            currUsername = ccs.elementAtOrNull(1);
             print("Successfully updated username!");
             break;
           }
         case "update-password":
           {
-            await api.updatePassword(ccs[1], ccs[2]);
+            await api.updatePassword(
+                ccs.elementAtOrNull(1), ccs.elementAtOrNull(2));
             print("Successfully updated password!");
             break;
           }
@@ -207,12 +209,12 @@ void runApp(ChatAPI api) async {
           }
         case "search-users":
           {
-            api.searchUsers(ccs[1]);
+            api.searchUsers(ccs.elementAtOrNull(1));
             break;
           }
         case "search-servers":
           {
-            api.searchServers(ccs[1]);
+            api.searchServers(ccs.elementAtOrNull(1));
             break;
           }
         case "display-channels":
@@ -295,7 +297,8 @@ void runApp(ChatAPI api) async {
             if (confirm == "y" || confirm == "yes") {
               await api.leaveServer(serverName, currUsername);
               print("Member deleted");
-              logger.info("Left server $ccs[1]", currUsername as String);
+              logger.info(
+                  "Left server $ccs.elementAt(1)", currUsername as String);
             }
             break;
           }
@@ -331,7 +334,8 @@ void runApp(ChatAPI api) async {
             if (currUsername == null) {
               throw Exception("Please login to create an invite code.");
             }
-            var code = await api.createInviteCode(ccs[1], currUsername);
+            var code =
+                await api.createInviteCode(ccs.elementAt(1), currUsername);
             print("Invite code created successfully. \n Use code: $code");
             break;
           }
@@ -340,7 +344,7 @@ void runApp(ChatAPI api) async {
             if (currUsername == null) {
               throw Exception("Please login to create an invite code.");
             }
-            await api.joinServerWithCode(ccs[1], currUsername);
+            await api.joinServerWithCode(ccs.elementAt(1), currUsername);
             print("Server joined successfully.");
             break;
           }
@@ -351,8 +355,10 @@ void runApp(ChatAPI api) async {
           }
         case "exit":
           {
+            print("\x1B[2J\x1B[H");
+            print("\x1B[0m");
             print("See you soon!");
-            break loop;
+            exit(0);
           }
         case "display-logs":
           {
@@ -369,13 +375,11 @@ void runApp(ChatAPI api) async {
               print("Please login to send a direct message.");
               break;
             }
-            print("Enter the message:");
-            var message = stdin.readLineSync();
-            if (message == null) {
-              print("Please enter a message.");
-              break;
-            }
-            api.sendDm(ccs[1], message, currUsername);
+            var recipient = getFlagValue("--recipient", currentCommand);
+            var message = getFlagValue("--message", currentCommand);
+            api.sendDm(recipient, message, currUsername);
+            print("Direct message sent successfully.");
+            break;
           }
         case "display-dms":
           {
@@ -383,19 +387,18 @@ void runApp(ChatAPI api) async {
               print("Please login to view direct messages.");
               break;
             }
-            List<String> messages = await api.getRecievedDms(currUsername);
-            for (var element in messages) {
-              print(element);
+            var filter = getFlagValue("--filter", currentCommand);
+            List<String> messages;
+            if (filter == "received") {
+              messages = await api.getRecievedDms(currUsername);
+            } else if (filter == "sent") {
+              messages = await api.getSentDms(currUsername);
+            } else {
+              messages = [
+                ...await api.getRecievedDms(currUsername),
+                ...await api.getSentDms(currUsername)
+              ];
             }
-            break;
-          }
-        case "display-sent-dms":
-          {
-            if (currUsername == null) {
-              print("Please login to view direct messages.");
-              break;
-            }
-            List<String> messages = await api.getSentDms(currUsername);
             for (var element in messages) {
               print(element);
             }
@@ -407,11 +410,36 @@ void runApp(ChatAPI api) async {
               print("Please login first.");
               break;
             }
-            await api.logoutUser(currUsername);
-            currUsername = null;
-            api.deleteUser(currUsername);
-            print("User deleted successfully.");
+            var confirmFlag = getFlagValue("--confirm", currentCommand);
+            if (confirmFlag.toLowerCase() == "yes" ||
+                confirmFlag.toLowerCase() == "y") {
+              await api.logoutUser(currUsername);
+              currUsername = null;
+              api.deleteUser(currUsername);
+              print("User deleted successfully.");
+            } else {
+              print("Please add --confirm yes to confirm user deletion.");
+            }
+            break;
           }
+        case "block":
+        {
+          if (currUsername == null) {
+            print("Please login first.");
+            break;
+          }
+          await api.blockUser(currUsername, ccs[1]);
+          print("User blocked successfully.");
+        }
+        case "unblock":
+        {
+          if (currUsername == null) {
+            print("Please login first.");
+            break;
+          }
+          await api.unblockUser(currUsername, ccs[1]);
+          print("User unblocked successfully.");
+        }
         default:
           {
             print("Please enter a valid command.");
