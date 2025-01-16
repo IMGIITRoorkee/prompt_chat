@@ -16,6 +16,7 @@ import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
 import 'package:prompt_chat/utils/file_utils.dart';
+import 'dart:convert';
 
 class ChatAPI {
   List<User> users = [];
