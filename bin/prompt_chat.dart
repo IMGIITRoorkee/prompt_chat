@@ -422,6 +422,28 @@ void runApp(ChatAPI api) async {
             }
             break;
           }
+        case "export-server-backup":
+          {
+            var serverName = getFlagValue("--server", currentCommand);
+            await api.exportServerData(serverName, currUsername);
+            logger.info(
+                "Exported server data for $serverName", currUsername as String);
+            print("Server data exported successfully!");
+            break;
+          }
+
+        case "import-server-from-backup":
+          {
+            if (currUsername == null) {
+              print("Please login first to import server data.");
+              break;
+            }
+            var filePath = getFlagValue("--file", currentCommand);
+            await api.importServerData(filePath, currUsername);
+            logger.info("Imported server data from $filePath", currUsername);
+            print("Server data imported successfully!");
+            break;
+          }
         case "block":
         {
           if (currUsername == null) {
