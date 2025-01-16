@@ -425,8 +425,8 @@ void runApp(ChatAPI api) async {
               break;
             }
             var confirmFlag = getFlagValue("--confirm", currentCommand);
-            if (confirmFlag.toLowerCase() == "yes" ||
-                confirmFlag.toLowerCase() == "y") {
+            if (confirmFlag?.toLowerCase() == "yes" ||
+                confirmFlag?.toLowerCase() == "y") {
               await api.logoutUser(currUsername);
               currUsername = null;
               api.deleteUser(currUsername);
@@ -437,23 +437,23 @@ void runApp(ChatAPI api) async {
             break;
           }
         case "block":
-        {
-          if (currUsername == null) {
-            print("Please login first.");
-            break;
+          {
+            if (currUsername == null) {
+              print("Please login first.");
+              break;
+            }
+            await api.blockUser(currUsername, ccs[1]);
+            print("User blocked successfully.");
           }
-          await api.blockUser(currUsername, ccs[1]);
-          print("User blocked successfully.");
-        }
         case "unblock":
-        {
-          if (currUsername == null) {
-            print("Please login first.");
-            break;
+          {
+            if (currUsername == null) {
+              print("Please login first.");
+              break;
+            }
+            await api.unblockUser(currUsername, ccs[1]);
+            print("User unblocked successfully.");
           }
-          await api.unblockUser(currUsername, ccs[1]);
-          print("User unblocked successfully.");
-        }
         default:
           {
             print("Please enter a valid command.");
