@@ -12,6 +12,14 @@ class Category {
     };
   }
 
+  Map<String, dynamic> toMapWithoutUserinfo() {
+    var mappedChannels = channels.map((e) => e.toMapWithoutUserInfo()).toList();
+    return {
+      'categoryName': categoryName,
+      'channels': mappedChannels,
+    };
+  }
+
   static Category fromMap(Map<String, dynamic> map) {
     late List<Channel> unmappedChannels;
     if (map['channels'] == null) {

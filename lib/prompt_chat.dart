@@ -16,6 +16,7 @@ import 'package:prompt_chat/db/database_crud.dart';
 import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
+import 'package:prompt_chat/utils/file_utils.dart';
 import 'dart:convert';
 
 class ChatAPI {
@@ -78,6 +79,40 @@ class ChatAPI {
     if (usernames.contains(username)) {
       throw Exception("User already exists");
     }
+  }
+
+  Future exportServer(String? serverName, String? outputPath) async {
+    String? username = getCurrentLoggedIn();
+    if (serverName == null || outputPath == null) {
+      throw Exception("Please enter a valid command.");
+    }
+    if (!FileUtils.isValidPath(outputPath)) {
+      throw Exception("Please enter a valid output path");
+    }
+    if (username == null) {
+      throw Exception("You must be logged in.");
+    }
+    var server = getServer(serverName);
+    if (!server.isAccessAllowed(username, 2)) {
+      throw Exception("You must be the owner of server to export its data!");
+    }
+    String json = server.toJson();
+    await FileUtils.writeJsonToFile(json, outputPath);
+  }
+
+  Future importServer(String? path) async {
+    if (path == null) {
+      throw Exception("Provide valid path!");
+    }
+    if (getCurrentLoggedIn() == null) {
+      throw Exception("You must be logged in!");
+    }
+    Map<String, dynamic> json = await FileUtils.readJsonFromFile(path);
+    User current = getUser(getCurrentLoggedIn()!);
+
+    Server s = Server.fromJson(json, current);
+    servers.add(s);
+    await DatabaseIO.addToDB(s, "servers");
   }
 
   // Display all the messages in a given server
