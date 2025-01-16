@@ -15,6 +15,7 @@ import 'package:prompt_chat/db/database_crud.dart';
 import 'package:prompt_chat/enum/channel_type.dart';
 import 'package:prompt_chat/enum/permissions.dart';
 import 'package:prompt_chat/enum/server_type.dart';
+import 'dart:convert';
 
 class ChatAPI {
   List<User> users = [];
@@ -84,13 +85,22 @@ class ChatAPI {
       throw Exception("Please enter a valid command");
     }
     var reqServer = getServer(serverName);
+    var currentUser = getCurrentLoggedIn();
+    if (currentUser == null) {
+      throw Exception("You must be logged in to view messages");
+    }
+    var user = getUser(currentUser);
+
     for (Channel channel in reqServer.channels) {
       print("${channel.channelName} : ");
       for (Message message in channel.messages) {
-        String formattedDate =
-            intl.DateFormat('dd/MM/yyyy h:mm a').format(message.time);
-        print(
-            "${message.sender.username} ($formattedDate): ${message.content}");
+        // Only display message if sender is not blocked
+        if (!user.blockedUsers.contains(message.sender.username)) {
+          String formattedDate =
+              intl.DateFormat('dd/MM/yyyy h:mm a').format(message.time);
+          print(
+              "${message.sender.username} ($formattedDate): ${message.content}");
+        }
       }
     }
   }
@@ -304,6 +314,9 @@ class ChatAPI {
       throw Exception(
           "Please enter the valid credentials, or login to continue.");
     }
+    if (categoryName.isEmpty) {
+      throw Exception("Category name must not be empty!");
+    }
     var reqServer = getServer(serverName);
     reqServer.checkAccessLevels(userName, [1, 2]);
     await reqServer
@@ -377,12 +390,24 @@ class ChatAPI {
     var reqServer = getServer(serverName);
     var reqUser = getUser(userName);
     var reqChannel = reqServer.getChannel(channelName);
+
     if (reqChannel.type != ChannelType.text) {
       throw Exception("You can only send a message in a text channel");
     }
     if (!(reqUser.loggedIn)) {
       throw Exception("Not logged in");
     }
+
+    // Check if any member in the channel has blocked the sender
+    for (var member in reqServer.members) {
+      if (member.blockedUsers.contains(userName)) {
+        // We still add the message but inform the sender they're blocked
+        print(
+            "Note: Some members won't see this message as they have blocked you");
+        break;
+      }
+    }
+
     await reqServer.addMessageToChannel(
         reqChannel, reqUser, Message(messageContent, reqUser));
   }
@@ -600,7 +625,6 @@ class ChatAPI {
     User sender = getUser(senderusername);
     User reciever = getUser(recieverusername);
     DirectMessage dm = DirectMessage(sender, reciever, message);
-    print(dm);
     dm.send();
   }
 
@@ -609,7 +633,9 @@ class ChatAPI {
     List<DirectMessage> dms = await DirectMessage.getMessages(user);
     List<String> messages = [];
     for (DirectMessage dm in dms) {
-      if (dm.receiver.username == user.username) {
+      // Only show messages if sender is not blocked
+      if (dm.receiver.username == user.username &&
+          !user.blockedUsers.contains(dm.sender.username)) {
         messages.add("${dm.sender.username} : ${dm.message}");
       }
     }
@@ -626,5 +652,139 @@ class ChatAPI {
       }
     }
     return messages;
+  }
+
+  Future<void> exportServerData(String? serverName, String? username) async {
+    if (serverName == null || username == null) {
+      throw Exception("Please provide valid server name and username");
+    }
+
+    var reqServer = getServer(serverName);
+    reqServer.checkAccessLevel(username, 2); // Ensure only owner can export
+
+    // Convert server to JSON
+    final serverJson = reqServer.toMap();
+
+    // Create timestamp for unique filename
+    final timestamp =
+        DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
+    final fileName =
+        'server_${serverName.replaceAll(' ', '_')}_$timestamp.json';
+
+    try {
+      // Create a backup directory if it doesn't exist
+      var backupDir = Directory('backups');
+      if (!await backupDir.exists()) {
+        await backupDir.create();
+      }
+
+      // Write JSON to file in backups directory
+      final file = File('${backupDir.path}${Platform.pathSeparator}$fileName');
+      await file.writeAsString(jsonEncode(serverJson), flush: true);
+      print('Server data exported successfully to ${file.path}');
+    } catch (e) {
+      throw Exception('Failed to export server data: $e');
+    }
+  }
+
+  Future<void> importServerData(String? filePath, String? username) async {
+    if (filePath == null || username == null) {
+      throw Exception("Please provide valid file path and username");
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw Exception('File not found: $filePath');
+      }
+
+      // Read and parse JSON file
+      final jsonString = await file.readAsString();
+      final serverData = jsonDecode(jsonString);
+
+      // Basic validation of JSON structure
+      if (!serverData.containsKey('serverName') ||
+          !serverData.containsKey('members') ||
+          !serverData.containsKey('roles')) {
+        throw Exception('Invalid server data format');
+      }
+
+      // Check if server name already exists
+      final serverName = serverData['serverName'];
+      if (servers.any((server) => server.serverName == serverName)) {
+        throw Exception('A server with this name already exists');
+      }
+
+      // Create new server instance
+      var newServer = Server.fromMap(serverData);
+
+      // Validate that the importing user exists and will be the owner
+      var importingUser = getUser(username);
+      if (!newServer.isAccessAllowed(username, 2)) {
+        // Ensure the importing user becomes the owner
+        await newServer.swapOwner(
+            newServer.getRole('owner').holders[0].username, username);
+      }
+
+      // Add server to the list and database
+      servers.add(newServer);
+      await DatabaseIO.addToDB(newServer, 'servers');
+
+      print('Server data imported successfully');
+    } catch (e) {
+      throw Exception('Failed to import server data: $e');
+    }
+  }
+
+  Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
+    if (blockerUsername == null || userToBlock == null) {
+      throw Exception("Please enter valid usernames");
+    }
+    if (blockerUsername == userToBlock) {
+      throw Exception("You cannot block yourself");
+    }
+
+    var blocker = getUser(blockerUsername);
+    var userBeingBlocked =
+        getUser(userToBlock); // This will verify the user exists
+
+    if (blocker.blockedUsers.contains(userToBlock)) {
+      throw Exception("User is already blocked");
+    }
+
+    // Create a new list with the existing blocked users plus the new one
+    List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
+      ..add(userToBlock);
+
+    // Update the blockedUsers list
+    blocker.blockedUsers = updatedBlockedUsers;
+
+    // Save to database
+    await UserIO.updateDB(blocker);
+  }
+
+  Future<void> unblockUser(
+      String? blockerUsername, String? userToUnblock) async {
+    if (blockerUsername == null || userToUnblock == null) {
+      throw Exception("Please enter valid usernames");
+    }
+
+    var blocker = getUser(blockerUsername);
+    var userBeingUnblocked =
+        getUser(userToUnblock); // This will verify the user exists
+
+    if (!blocker.blockedUsers.contains(userToUnblock)) {
+      throw Exception("User is not blocked");
+    }
+
+    // Create a new list without the unblocked user
+    List<String> updatedBlockedUsers = List<String>.from(blocker.blockedUsers)
+      ..remove(userToUnblock);
+
+    // Update the blockedUsers list
+    blocker.blockedUsers = updatedBlockedUsers;
+
+    // Save to database
+    await UserIO.updateDB(blocker);
   }
 }
