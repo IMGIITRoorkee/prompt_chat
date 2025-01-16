@@ -690,6 +690,88 @@ class ChatAPI {
     return messages;
   }
 
+  Future<void> exportServerData(String? serverName, String? username) async {
+    if (serverName == null || username == null) {
+      throw Exception("Please provide valid server name and username");
+    }
+
+    var reqServer = getServer(serverName);
+    reqServer.checkAccessLevel(username, 2); // Ensure only owner can export
+
+    // Convert server to JSON
+    final serverJson = reqServer.toMap();
+
+    // Create timestamp for unique filename
+    final timestamp =
+        DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
+    final fileName =
+        'server_${serverName.replaceAll(' ', '_')}_$timestamp.json';
+
+    try {
+      // Create a backup directory if it doesn't exist
+      var backupDir = Directory('backups');
+      if (!await backupDir.exists()) {
+        await backupDir.create();
+      }
+
+      // Write JSON to file in backups directory
+      final file = File('${backupDir.path}${Platform.pathSeparator}$fileName');
+      await file.writeAsString(jsonEncode(serverJson), flush: true);
+      print('Server data exported successfully to ${file.path}');
+    } catch (e) {
+      throw Exception('Failed to export server data: $e');
+    }
+  }
+
+  Future<void> importServerData(String? filePath, String? username) async {
+    if (filePath == null || username == null) {
+      throw Exception("Please provide valid file path and username");
+    }
+
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        throw Exception('File not found: $filePath');
+      }
+
+      // Read and parse JSON file
+      final jsonString = await file.readAsString();
+      final serverData = jsonDecode(jsonString);
+
+      // Basic validation of JSON structure
+      if (!serverData.containsKey('serverName') ||
+          !serverData.containsKey('members') ||
+          !serverData.containsKey('roles')) {
+        throw Exception('Invalid server data format');
+      }
+
+      // Check if server name already exists
+      final serverName = serverData['serverName'];
+      if (servers.any((server) => server.serverName == serverName)) {
+        throw Exception('A server with this name already exists');
+      }
+
+      // Create new server instance
+      var newServer = Server.fromMap(serverData);
+
+      // Validate that the importing user exists and will be the owner
+      var importingUser = getUser(username);
+      if (!newServer.isAccessAllowed(username, 2)) {
+        // Ensure the importing user becomes the owner
+        await newServer.swapOwner(
+            newServer.getRole('owner').holders[0].username, username);
+      }
+
+      // Add server to the list and database
+      servers.add(newServer);
+      await DatabaseIO.addToDB(newServer, 'servers');
+
+      print('Server data imported successfully');
+    } catch (e) {
+      throw Exception('Failed to import server data: $e');
+    }
+  }
+
   Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
     if (blockerUsername == null || userToBlock == null) {
       throw Exception("Please enter valid usernames");
