@@ -166,7 +166,7 @@ class ChatAPI {
   // Logout a user
   Future<void> logoutUser(String? username) async {
     if (username == null) {
-      throw InvalidCredentialsException();
+      throw Exception("No user logged in currently!");
     }
     var reqUser = getUser(username);
     reqUser.loggedIn = false;
@@ -619,7 +619,11 @@ class ChatAPI {
     invite.invitedUsers.add(reqUser);
   }
 
-  void sendDm(String recieverusername, String message, String senderusername) {
+  void sendDm(
+      String? recieverusername, String? message, String? senderusername) {
+    if (recieverusername == null || message == null || senderusername == null) {
+      throw Exception("Enter a valid command!");
+    }
     User sender = getUser(senderusername);
     User reciever = getUser(recieverusername);
     DirectMessage dm = DirectMessage(sender, reciever, message);
@@ -634,7 +638,6 @@ class ChatAPI {
       // Only show messages if sender is not blocked
       if (dm.receiver.username == user.username &&
           !user.blockedUsers.contains(dm.sender.username)) {
-
         messages.add("${dm.sender.username} : ${dm.message}");
       }
     }
@@ -734,8 +737,8 @@ class ChatAPI {
       throw Exception('Failed to import server data: $e');
     }
   }
-    Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
 
+  Future<void> blockUser(String? blockerUsername, String? userToBlock) async {
     if (blockerUsername == null || userToBlock == null) {
       throw Exception("Please enter valid usernames");
     }
