@@ -1,4 +1,5 @@
 import 'dart:core';
+import 'dart:io';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:prompt_chat/cli/category.dart';
@@ -621,7 +622,11 @@ class ChatAPI {
     invite.invitedUsers.add(reqUser);
   }
 
-  void sendDm(String recieverusername, String message, String senderusername) {
+  void sendDm(
+      String? recieverusername, String? message, String? senderusername) {
+    if (recieverusername == null || message == null || senderusername == null) {
+      throw Exception("Enter a valid command!");
+    }
     User sender = getUser(senderusername);
     User reciever = getUser(recieverusername);
     DirectMessage dm = DirectMessage(sender, reciever, message);
