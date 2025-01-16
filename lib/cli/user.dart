@@ -64,7 +64,9 @@ class User {
       this.password = newPass;
       hashPassword();
     }
-    await UserIO.updateDB(User(username ?? this.username, this.password, true));
+    String oldUsername = this.username;
+    if (username != null) this.username = username;
+    await UserIO.updateDB(this, username: oldUsername);
   }
 
   Future<void> register() async {

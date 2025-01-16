@@ -47,12 +47,12 @@ class UserIO extends DatabaseIO {
     return reqUsers.map((e) => User.fromMap(e)).toList();
   }
 
-  static Future<bool> updateDB(dynamic document) async {
+  static Future<bool> updateDB(dynamic document, {String? username}) async {
     var env = DotEnv(includePlatformEnvironment: true)..load(['.env']);
     var db = await connectDB(env['MONGO_URI']!);
     var reqCollection = db.collection("users");
-    WriteResult writeResult = await reqCollection
-        .replaceOne({'username': document.username}, document.toMap());
+    WriteResult writeResult = await reqCollection.replaceOne(
+        {'username': username ?? document.username}, document.toMap());
     db.close();
     return writeResult.isSuccess;
   }
