@@ -231,6 +231,9 @@ class ChatAPI {
       throw Exception(
           "Please enter the required credentials, or login to continue.");
     }
+    if (serverName.isEmpty) {
+      throw Exception("Server name cannot be empty");
+    }
     JoinPerm joinPerm = getJoinPerm(serverPerm);
     var creator = getUser(userName);
     var newServer = createNewServer(serverName, joinPerm);
