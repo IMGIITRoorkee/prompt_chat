@@ -2,4 +2,5 @@
 # Created by `dart pub`
 .dart_tool/
 .env
+
 /app_logs.log

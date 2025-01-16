@@ -234,6 +234,9 @@ class ChatAPI {
     if (serverName.isEmpty) {
       throw Exception("Server name cannot be empty");
     }
+    if (servers.any((element) => element.serverName == serverName)) {
+      throw Exception("Server with same name already exists!");
+    }
     JoinPerm joinPerm = getJoinPerm(serverPerm);
     var creator = getUser(userName);
     var newServer = createNewServer(serverName, joinPerm);
