@@ -28,7 +28,7 @@ class Message {
     return Message(
       map['content'],
       User.fromMap(map['sender']),
-      time: DateTime.tryParse(map['time'] ?? ""),
+      time: DateTime.tryParse(map['time'] ?? ''),
     );
   }
 }

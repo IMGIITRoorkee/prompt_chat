@@ -19,6 +19,9 @@ class Server {
   List<InviteCode> inviteCodes = [];
   late String serverName;
   late JoinPerm joinPerm;
+
+  Map<String, dynamic>? _snapshot;
+
   Server(
       {required this.serverName,
       required this.members,
@@ -26,8 +29,27 @@ class Server {
       required this.categories,
       required this.channels,
       this.joinPerm = JoinPerm.open});
+
+  void _createSnapshot() {
+    _snapshot = toMap();
+  }
+
+  void _rollbackToSnapshot() {
+    if (_snapshot == null) return;
+
+    Server server = fromMap(_snapshot!);
+    serverName = server.serverName;
+    members = server.members;
+    roles = server.roles;
+    categories = server.categories;
+    channels = server.channels;
+    joinPerm = server.joinPerm;
+  }
+
   //called only on server creation
   Future<void> instantiateServer(User owner) async {
+    _createSnapshot();
+
     members.add(owner);
     var ownerRole =
         Role(roleName: "owner", accessLevel: Permission.owner, holders: []);
@@ -36,35 +58,49 @@ class Server {
     roles.add(
         Role(roleName: "member", accessLevel: Permission.member, holders: []));
     //database logic
-    await DatabaseIO.addToDB(this, "servers");
+    bool success = await DatabaseIO.addToDB(this, "servers");
+
+    if (!success) _rollbackToSnapshot();
   }
 
   Future<void> addMember(User newMember) async {
     if (members.contains(newMember)) {
       throw Exception("Already a member");
     }
+    _createSnapshot();
+
     members.add(newMember);
     var memberRole = getRole("member");
     memberRole.holders.add(newMember);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> addCategory(Category newCategory) async {
     if (categories.contains(newCategory)) {
       throw Exception("Category already exists");
     }
+    _createSnapshot();
+
     categories.add(newCategory);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> addChannel(Channel newChannel, String parentCategoryName) async {
     if (channels.contains(newChannel)) {
       throw Exception("Channel already exists");
     }
+    _createSnapshot();
+
     channels.add(newChannel);
     var reqCat = getCategory(parentCategoryName);
     reqCat.channels.add(newChannel);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> addMessageToChannel(
@@ -75,12 +111,16 @@ class Server {
     if (!(channels.contains(channel))) {
       throw Exception("The channel does not exist on the specified server");
     }
+    _createSnapshot();
+
     List<Role> senderRoles = extractRoles(sender);
     senderRoles.firstWhere(
         (role) => role.accessLevel.index >= channel.permission.index,
         orElse: () => throw Exception("Access not allowed for this channel"));
     channel.messages.add(message);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Map<String, dynamic> toMap() {
@@ -232,12 +272,13 @@ class Server {
         .map((channel) => Channel.fromMap(channel))
         .toList();
     return Server(
-        serverName: map["serverName"],
-        members: unmappedMembers,
-        roles: unmappedRoles,
-        categories: unmappedCategories,
-        channels: unmappedChannels,
-        joinPerm: perm);
+      serverName: map["serverName"],
+      members: unmappedMembers,
+      roles: unmappedRoles,
+      categories: unmappedCategories,
+      channels: unmappedChannels,
+      joinPerm: perm,
+    );
   }
 
   Future<void> addRole(Role newRole) async {
@@ -246,13 +287,21 @@ class Server {
         throw Exception("Role already exists on this server");
       }
     }
+    _createSnapshot();
+
     roles.add(newRole);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> assignRole(Role role, User member) async {
+    _createSnapshot();
+
     role.holders.add(member);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> assignChannel(String channelName, String categoryName) async {
@@ -263,6 +312,9 @@ class Server {
         throw Exception("Channel is already in the required category");
       }
     }
+
+    _createSnapshot();
+
     for (Category category in categories) {
       if (category.channels
           .map((e) => e.channelName)
@@ -272,16 +324,24 @@ class Server {
       }
     }
     reqCategory.channels.add(reqChannel);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> changePerm(String channelName, Permission perm) async {
+    _createSnapshot();
+
     var reqChannel = getChannel(channelName);
     reqChannel.permission = perm;
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> removeChannel(String channelName) async {
+    _createSnapshot();
+
     var reqChannel = getChannel(channelName);
     outer_loop:
     for (Category category in categories) {
@@ -292,22 +352,34 @@ class Server {
         }
       }
     }
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> removeCategory(String categoryName) async {
+    _createSnapshot();
+
     var reqCategory = getCategory(categoryName);
     categories.remove(reqCategory);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> removeRole(String roleName) async {
+    _createSnapshot();
+
     var reqRole = getRole(roleName);
     roles.remove(reqRole);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> removeMember(String memberName) async {
+    _createSnapshot();
+
     var reqMember = getMember(memberName);
     members.remove(reqMember);
     for (Role role in roles) {
@@ -317,15 +389,21 @@ class Server {
         }
       }
     }
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   Future<void> swapOwner(String currOwner, String newOwner) async {
+    _createSnapshot();
+
     var ownerRole = getRole("owner");
     var owner = getMember(newOwner);
     ownerRole.holders.removeLast();
     ownerRole.holders.add(owner);
-    await ServerIO.updateDB(this);
+    bool res = await ServerIO.updateDB(this);
+
+    if (!res) _rollbackToSnapshot();
   }
 
   User getMember(String name) {

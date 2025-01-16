@@ -5,17 +5,3 @@
 [2025-01-09T19:52:15.674177] --username: [INFO] User logged in
 [2025-01-09T19:52:29.755518] skullhead0101: [INFO] Created new server 
 [2025-01-09T19:53:45.428888] skullhead0101: [INFO] Created new server errServer
-[2025-01-09T22:47:12.885114] --username: [INFO] User logged in
-[2025-01-09T22:47:36.976982] newuser: [INFO] Created new server newserver
-[2025-01-09T22:48:28.069365] newuser: [INFO] Added category mycategory to server newserver
-[2025-01-09T23:06:36.664833] --username: [INFO] User registered
-[2025-01-09T23:06:47.367150] --username: [INFO] User logged in
-[2025-01-09T23:06:57.892615] somye: [INFO] Created new server myserver
-[2025-01-09T23:08:58.567968] somye: [INFO] Created new server myserver
-[2025-01-10T21:02:25.868336] userna: [INFO] Added channel firstchan to server ooo
-[2025-01-10T21:03:20.092833] userna: [INFO] Added channel firstchan to server ooo
-[2025-01-10T21:04:31.545961] userna: [INFO] Added channel secondchan to server ooo
-[2025-01-10T21:04:43.721289] userna: [INFO] Sent message in server 'ooo' channel 'secondchan'
-[2025-01-10T21:51:55.950003] --username: [INFO] User registered
-[2025-01-10T21:52:01.942869] --username: [INFO] User logged in
-[2025-01-10T21:52:08.903358] _sksk: [INFO] Created new server 
